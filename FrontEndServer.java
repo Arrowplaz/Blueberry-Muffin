@@ -1,5 +1,7 @@
 import java.util.List; 
-import java.util.ArrayList; 
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.net.URL;     
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
@@ -11,18 +13,32 @@ import org.apache.xmlrpc.server.XmlRpcServer;
  * The Front End Server of the project
  */
 public class FrontEndServer { 
+  // Plan of action --> today we need to have multiple distributed machines (so two machines)
+  // 
+  // Frontend --> decrypt key to add servers to regions
+  // manages one main region, and a list of other FrontEndIPs
 
-  private static ArrayList<String> Region1 = new ArrayList<>();
-  private static ArrayList<String> Region2 = new ArrayList<>();
-  private static ArrayList<String> Region3 = new ArrayList<>();
+  //
+  // some way to partition genres --> first we're starting off with 10 genres
+  // assign database IP to genres
+  // add method 
+  // INTIAL dataload 
   
-  private void addIP(String ipAddress){
-    int region = self.calcRegion(ipAddress);
-    this.Region1.add(ipAddress);
-  }
+  // list machines to the genre they are in charge of
+  private Map<String, ArrayList<String>> dbToGenre = new HashMap<String, ArrayList<String>>(); 
+  private static ArrayList<String> databases = new ArrayList<>();
+  private static ArrayList<String> otherFronteEnds = new ArrayList<>();
 
-  private void calcRegion(String ipAddress){
-    //Need implementation to decide what group ipAddress goes into
+  private void repartion(){
+    return;
+  }
+  
+  private void addDatabase(String ipAddress, String key){
+    if(!databases.contains(ipAddress)){
+      databases.add(ipAddress);
+      // some sort if timer or something
+      repartion();
+    }
   }
   
 
@@ -55,6 +71,13 @@ public class FrontEndServer {
       System.out.println("Usage: [catalog server host name] [order server host name]");
       return;
     }
+    // get ip address of first database 
+    
+    // pass in other frontend servers
+
+    // pass in databases
+
+    // 
     catalogHostName = args[0];
     orderHostName = args[1];
 
