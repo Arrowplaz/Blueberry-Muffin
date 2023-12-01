@@ -3,6 +3,7 @@ import org.apache.xmlrpc.server.XmlRpcServer;
 import org.apache.xmlrpc.server.PropertyHandlerMapping;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -17,23 +18,31 @@ public class DatabaseServer {
   /**
    * The primary data structure meant to the data
    */
-  private static ArrayList<String> placeholderDB = new ArrayList<String>();
+  private static Map<String, ArrayList<Book>> database = new HashMap<String, ArrayList<Book>>();
 
- 
-  private void GET(String topic){
+  private static Set<String> getGenres(){
+    return database.keySet();
+  }
+
+  
+  private ArrayList<Book> GET(String genre){
+    if(database.keySet().contains(genre)){
+      return database.get(genre);
+    }
+    else return null;
   }
 
 
-  public static void DELETE(){
-
+  public static void DELETE(String genre){
+    if(database.keySet().contains(genre)){
+      database.remove(genre);
+    }
   }
 
-  public static void POST(){
-
-  }
-
-  public static void PUT(){
-
+  public static void ADD(String genre, Book newBook){
+    if(database.keySet().contains(genre)){
+      database.get(genre).add(newBook);
+    }
   }
 
   /**
@@ -48,7 +57,7 @@ public class DatabaseServer {
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
-      WebServer server = new WebServer(2384);
+      WebServer server = new WebServer(8412);
       xmlRpcServer = server.getXmlRpcServer();
       phm.addHandler("Database", DatabaseServer.class);
       xmlRpcServer.setHandlerMapping(phm);

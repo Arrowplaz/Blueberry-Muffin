@@ -6,40 +6,89 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 /**
  * A Java client to the online bookstore.
  */
+
+/*
+Add book
+Lookup Book
+Add
+*/
+
+
 public class Client {
-  private static String frontEndHostName;
-  private static int frontEndPortNum = 9182;
+  private static ArrayList<String> frontendServers;
+  private final int PORTNUMBER = 8412;
+  private static String frontendIP = "0";
 
-  public static void main(String[] args) {
-    if (args.length != 3) {
-      System.out.println("Usage: [front-end server host name] [function name] [param]");
-      return;
-    }
-    
-    frontEndHostName = args[0];
-    String functionName = args[1];
-    String param = args[2];
+  private static void intializeFrontEnd(){
+    frontendServers = new ArrayList<>();
+    frontendServers.add("123");
+  }
 
+  /**
+   * The helper method to create a client
+   * 
+   * @param hostName: hostname of the client
+   * @param portNum: the portnum of the client
+   * 
+   * @return the client
+   */
+  public XmlRpcClient createClient() {
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
-      config.setServerURL(new URL("http://" + frontEndHostName + ":" + frontEndPortNum));
+      config.setServerURL(new URL("http://" + frontendIP + ":" + PORTNUMBER));
       client = new XmlRpcClient();
       client.setConfig(config);
     } catch (Exception e) {
       System.err.println("Client exception: " + e);
     }
+    return client;
+  }
 
-    List<String> params = new ArrayList<String>();
-    params.add(functionName);
-    params.add(param);
 
-    try {
-      String result = (String) client.execute("FrontEnd.takeInCommand", params);//What does the handler do
-      System.out.println(result);
-    } catch (Exception e) {
-      System.err.println("Client exception: " + e);
-    }  
+  private static void findFrontEnd(){
+  }
+
+  private static void addBook(String genre){
+    System.out.println("Not developed yet");
+    return;
+  }
+
+  private static void lookupCategory(String Category){
+  }
+
+  private static void addDatabase(String ipAddress){
+    
+  }
+
+  public static void main(String[] args) {
+    intializeFrontEnd();
+
+    if (args.length != 2) {
+      System.out.println("Usage: [function name] [param]");
+      return;
+    }
+    
+    String functionName = args[0];
+    
+    switch(functionName){
+      case "lookupCategory":
+        lookupCategory(args[1]);
+        break;
+
+      case "addBook":
+        addBook(args[1]);
+        break;
+      
+      case "addDatabase":
+        addDatabase(args[1]);
+        break;
+
+      default:
+        System.out.println("Invalid function name");
+        System.out.println("Functions: lookupCategory, addBook, addDatabase");
+        return;
+    }
   }
 }
 
