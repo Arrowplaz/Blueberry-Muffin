@@ -96,8 +96,18 @@ public class FrontEndServer {
   }
   
   public boolean addItem(String category, String contents){
-    
     int index = hash(category, databases.size());
+    XmlRpcClient client = createClient(databases.get(index));
+    List<String> params = new ArrayList<String>();
+    params.add(category);
+    params.add(contents);
+
+    try {
+      String result = (String) client.execute("Database.addItem", params);//
+      return result;
+    } catch (Exception e) {
+      return "(FrontEnd, search) Client Exception: " + e;
+    }
     // call an RPC call with databases[index]
     return true;
   }
