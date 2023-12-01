@@ -1,4 +1,5 @@
-import java.util.List; 
+import java.util.List;
+import java.util.Vector;
 import java.util.ArrayList; 
 import java.net.URL;     
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -17,11 +18,14 @@ Add
 public class Client {
   private static ArrayList<String> frontendServers;
   private final int PORTNUMBER = 8412;
-  private static String frontendIP = "0";
+  private static String frontendIp = "0";
 
   private static void intializeFrontEnd(){
     frontendServers = new ArrayList<>();
-    frontendServers.add("123");
+    frontendServers.add("54.241.136.136"); //California
+    frontendServers.add("15.161.56.73"); //Milan
+    frontendServers.add("13.245.150.107"); //Capetown
+    frontendServers.add("54.180.122.185"); //Seoul
   }
 
   /**
@@ -32,7 +36,7 @@ public class Client {
    * 
    * @return the client
    */
-  public XmlRpcClient createClient() {
+  public static XmlRpcClient createClient(String frontendIP) {
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
@@ -47,18 +51,37 @@ public class Client {
 
 
   private static void findFrontEnd(){
+    frontendIp = frontendServers.get(0);
   }
 
-  private static void addBook(String genre){
-    System.out.println("Not developed yet");
-    return;
+  private static void addBook(String genre, String bookName){
+    for(String frontEnd: frontendServers){
+      XmlRpcClient client = createClient(frontEnd);
+      List<String> params = new ArrayList<>();
+      params.add(genre);
+      params.add(bookName);
+
+      try{
+        Boolean result = (Boolean)client.execute("FrontEnd.addBook", params.toArray());
+        if(result){
+          System.out.println("Book: " + bookName + " was Sucessfully added to " + frontEnd); 
+        }
+        else{
+          System.out.println("Failed to add to " + frontEnd);
+        }
+      }
+      catch(Exception e){
+        System.err.println("Client exception: " + e);
+      }
+    }
   }
 
   private static void lookupCategory(String Category){
+    if(frontendIp.equals("0")) findFrontEnd();
   }
 
   private static void addDatabase(String ipAddress){
-    
+    if(frontendIp.equals("0")) findFrontEnd();
   }
 
   public static void main(String[] args) {
