@@ -33,16 +33,20 @@ public class DatabaseServer {
   }
 
 
-  public static void DELETE(String genre){
+  public static boolean DELETE(String genre){
     if(database.keySet().contains(genre)){
       database.remove(genre);
+      return true;
     }
+    return false;
   }
 
-  public static void ADD(String genre, Book newBook){
+  public static boolean ADD(String genre, Book newBook){
     if(database.keySet().contains(genre)){
       database.get(genre).add(newBook);
+      return true;
     }
+    return false;
   }
 
   /**
