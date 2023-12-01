@@ -28,9 +28,32 @@ public class FrontEndServer {
   private static boolean dataLoaded = false;
   private static List<String> categories = new ArrayList<String>();
   // instead have a hashfunction with the number of databases
-  private static Map<String, ArrayList<String>> categoryToDb = new HashMap<String, ArrayList<String>>(); 
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFronteEnds = new ArrayList<>();
+  private final int PORTNUMBER = 8412;
+
+
+
+  /**
+   * The helper method to create a client
+   * 
+   * @param hostName: hostname of the client
+   * @param portNum: the portnum of the client
+   * 
+   * @return the client
+   */
+  public XmlRpcClient createClient(String databaseIp) {
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    XmlRpcClient client = null;
+    try {
+      config.setServerURL(new URL("http://" + databaseIp + ":" + PORTNUMBER));
+      client = new XmlRpcClient();
+      client.setConfig(config);
+    } catch (Exception e) {
+      System.err.println("Client exception: " + e);
+    }
+    return client;
+  }
 
   // hash function even work 
   // add 
@@ -42,39 +65,47 @@ public class FrontEndServer {
   private void repartion(){
     // how would repartitioning work 
     // hash with old vslue
-  
+    for (String category: categories) {
+      int oldHash = hash(category, databases.size() - 1);
+      int newHash = hash(category, databases.size());
+      if (oldHash != newHash) {
+        // RPC call for the old machine to send data to the new machine
+        // and delete its key
+      }
+    }
     return;
   }
 
   // hash function, is send string to hash ---> hash sends out 
-  public int hash(String category){
+  public int hash(String category, int numMachines){
     // doing hashing
     // taken from https://stackoverflow.com/questions/16521148/string-to-unique-integer-hashing
     int result = 0;
     for (int i = 0; i < category.length(); i++) {
+      // 250 is a magic number, it's somehow MAX_NUMBER from that above link
       result += Math.pow(27, 250 - i - 1)*(1 + category.charAt(i) - 'a');
     }
-    return result%databases.size();
+    return result%numMachines;
   }
   
   public void addDatabase(String ipAddress, String key){
-    if(!databases.contains(ipAddress)){
-      databases.add(ipAddress); 
-      repartion();
-    }
+    // check if database already in stuff?
+    databases.add(ipAddress); 
+    repartion();
+    return;
   }
   
-  public boolean addBook(String category, String contents){
-    int index = hash(category);
+  public boolean addItem(String category, String contents){
+    
+    int index = hash(category, databases.size());
     // call an RPC call with databases[index]
     return true;
   }
 
-  private static void addCategories(){
-    categories.add("Fantasy");
-    categories.add("Mystery");
-    categories.add("Action");
-    categories.add("Self Help");
+  public static void addCategories(String category){
+    // make category a hashset?
+    categories.add(category);
+    return;
   }
 
   /**
@@ -107,18 +138,11 @@ public class FrontEndServer {
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length == 0) {
-      System.out.println("Usage: [database 1 IP] [database 2 IP] ...");
+    if (args.length != 0) {
+      System.out.println("NO INPUTS");
       return;
     }
-    // pass in other frontend servers
 
-    // add database IPs to be added to frontend
-    for (String databaseIp: args) {
-      databases.add(databaseIp);
-    }
-    addCategories();
-    
     
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
