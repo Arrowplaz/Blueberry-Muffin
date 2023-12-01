@@ -19,28 +19,62 @@ public class FrontEndServer {
   // manages one main region, and a list of other FrontEndIPs
 
   //
-  // some way to partition genres --> first we're starting off with 10 genres
-  // assign database IP to genres
+  // some way to partition categories --> first we're starting off with 10 categories
+  // assign database IP to categories
   // add method 
   // INTIAL dataload 
   
   // list machines to the genre they are in charge of
-  private Map<String, ArrayList<String>> dbToGenre = new HashMap<String, ArrayList<String>>(); 
+  private static boolean dataLoaded = false;
+  private static List<String> categories = new ArrayList<String>();
+  private static Map<String, ArrayList<String>> categoryToDb = new HashMap<String, ArrayList<String>>(); 
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFronteEnds = new ArrayList<>();
 
+  // clients call this to send as small package/boolean
+  public boolean heartbeat() {
+    return true;
+  }
   private void repartion(){
     return;
   }
   
-  private void addDatabase(String ipAddress, String key){
+  public void addDatabase(String ipAddress, String key){
     if(!databases.contains(ipAddress)){
       databases.add(ipAddress);
       // some sort if timer or something
+      // repartition the keys based so 
       repartion();
     }
   }
   
+
+  public boolean addCategory(){
+    return true;
+  }
+  
+  public boolean addBook(){
+    return true;
+  }
+
+  public static void initialDataLoad() {
+    // assign categories to databases
+    // divide caterogies with the number of dbs 
+
+    // randombly create ids and files for category, this is random access
+    
+    // send files to respective database for category --> ask barker 
+
+    // send the data to each database in other regions, using the add categories (potentially)
+    // and addbooks of other servers
+  }
+
+  private static void addCategories(){
+    categories.add("Fantasy");
+    categories.add("Mystery");
+    categories.add("Action");
+    categories.add("Self Help");
+  }
 
   /**
    * The helper method to create a client
@@ -67,19 +101,21 @@ public class FrontEndServer {
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length != 2) {
-      System.out.println("Usage: [catalog server host name] [order server host name]");
+    if (args.length == 0) {
+      System.out.println("Usage: [database 1 IP] [database 2 IP] ...");
       return;
     }
-    // get ip address of first database 
-    
     // pass in other frontend servers
+    otherFronteEnds.add("blah");
+    otherFronteEnds.add("blue");
 
-    // pass in databases
-
-    // 
-    catalogHostName = args[0];
-    orderHostName = args[1];
+    // add database IPs to be added to frontend
+    for (String databaseIp: args) {
+      databases.add(databaseIp);
+    }
+    addCategories();
+    
+    
 
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
