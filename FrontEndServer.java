@@ -9,6 +9,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.server.PropertyHandlerMapping;
 import org.apache.xmlrpc.webserver.WebServer; 
 import org.apache.xmlrpc.server.XmlRpcServer;
+import java.util.Scanner;
 
 /**
  * The Front End Server of the project
@@ -89,7 +90,7 @@ public class FrontEndServer {
   }
   
   
-  public boolean addDatabase(String ipAddress, String key){
+  public boolean addDatabase(String ipAddress){
     // check if database already in 
     if (databases.contains(ipAddress)){
       // might want to just return true here
@@ -126,16 +127,7 @@ public class FrontEndServer {
       }
     }
     // call an RPC call with databases[index]
-    return true;
-  }
-
-  /*
-   * this function may not be needed
-   */
-  public static void addCategories(String category){
-    // make category a hashset?
-    categories.add(category);
-    return;
+    return "true";
   }
 
   public List<String> addFrontEnd(String ipAddress){
@@ -144,6 +136,28 @@ public class FrontEndServer {
     otherFrontEnds.add(ipAddress);
     return otherFrontEnds;
   }
+
+  public String lookupCategory(String category){
+    int index = hash(category, databases.size());
+    XmlRpcClient client = createClient(databases.get(index));
+    List<String> params = new ArrayList<>();
+    params.add(category);
+
+    try{
+      String result = (String) client.execute("Database.GET", params);
+      if(result != null){
+        return result;
+      }
+      else{
+        return null;
+      }
+    }
+    catch(Exception e){
+      System.err.println("Front end failure" + e);
+    }
+
+  }
+
 
   /**
    * The main method
