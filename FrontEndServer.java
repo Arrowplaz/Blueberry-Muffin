@@ -45,11 +45,11 @@ public class FrontEndServer {
    * 
    * @return the client
    */
-  public XmlRpcClient createClient(String databaseIp) {
+  public XmlRpcClient createClient(String ip) {
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
-      config.setServerURL(new URL("http://" + databaseIp + ":" + PORTNUMBER));
+      config.setServerURL(new URL("http://" + ip + ":" + PORTNUMBER));
       client = new XmlRpcClient();
       client.setConfig(config);
     } catch (Exception e) {
@@ -70,6 +70,9 @@ public class FrontEndServer {
       if (oldHash != newHash) {
         // DO RPC call for the old machine to send data to the new machine
         // and delete its key
+        System.out.println(category + " remapped from " + Integer.toString(oldHash) + " to " 
+        + Integer.toString(newHash));
+        System.out.println("Find it there from now on!");
       }
     }
     return;
@@ -78,31 +81,13 @@ public class FrontEndServer {
   // hash function, is send string to hash ---> hash sends out 
   public int hash(String category, int numMachines){
     // need a hash that spits out 2 numbers modded over the number of machines
-    // doing hashing
-    // taken from https://stackoverflow.com/questions/16521148/string-to-unique-integer-hashing
-    int result = 0;
-    for (int i = 0; i < category.length(); i++) {
-      // 250 is a magic number, it's somehow MAX_NUMBER from that above link
-      result += Math.pow(27, 250 - i - 1)*(1 + category.charAt(i) - 'a');
-    }
-    return result%numMachines;
+
+    int hash = hashCode();
+    return hash%numMachines;
   }
   
   
-  public boolean addDatabase(String ipAddress, String key){
-    // check if database already in 
-    if (databases.contains(ipAddress)){
-      // might want to just return true here
-      return false;
-    }
-    databases.add(ipAddress); 
-    // do we need to notify the database at all or?
-    // fault tolerance all the way
-    repartion();
-    return true;
-  }
-  
-  public String addItem(String category, String contents){
+  public boolean addItem(String category, String contents){
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
@@ -132,18 +117,71 @@ public class FrontEndServer {
   /*
    * this function may not be needed
    */
-  public static void addCategories(String category){
-    // make category a hashset?
-    categories.add(category);
-    return;
+  public String getFile(String category, String fileName) {
+    return "String";
   }
 
-  public List<String> addFrontEnd(String ipAddress){
+  public List<String> getFrontEnd(String ipAddress){
     // send list of frontEnds to ipAddress and THEN
     // xml RPC call 
     otherFrontEnds.add(ipAddress);
     return otherFrontEnds;
   }
+
+  public boolean addFrontEnd(String ipAddress) {
+    otherFrontEnds.add(ipAddress);
+    return true;
+  }
+
+  public List<String> acceptFrontEnd(String newFrontEndIp) {
+    // may lead to an issue, may need to copy instead of merely assign
+    List<String> frontEnds = otherFrontEnds;
+    for (String frontEnd : otherFrontEnds) {
+      // rpc call to add that frontEnd to their frontEnds, we can add error handling later
+      // can change returns for debugging
+      XmlRpcClient client = createClient(frontEnd);
+      List<String> params = new ArrayList<String>();
+      params.add(newFrontEndIp);
+
+      boolean result = (boolean) client.execute("FrontEndServer.addItem", params);
+      if (result == true) {
+        System.out.println("Successfully added new FrontEnd to " + frontEnd);
+      } 
+    } 
+    // send the frontEnds to the new joining frontEnd
+    otherFrontEnds.add(newFrontEndIp);
+    // return the arraylist without the newIp's own IP
+    return frontEnds;
+  }
+
+  public static boolean joinFrontEnd(String frontEndIp, String entryPoint) {
+    // RPC call to accept frontEnds
+    // needs to send its IP and the entryPoint IP
+    XmlRpcClient client = createClient(entryPoint);
+    List<String> params = new ArrayList<String>();
+    params.add(frontEndIp);
+
+    ArrayList<String> result = (ArrayList<String>) client.execute("FrontEndServer.acceptFrontEnd", params);
+    if (result != null) {
+      otherFrontEnds = result;
+      return true;
+    }
+
+    return false;
+  }
+  
+  public boolean addDatabase(String ipAddress){
+    // check if database already in 
+    if (databases.contains(ipAddress)){
+      // might want to just return true here
+      return false;
+    }
+
+    databases.add(ipAddress); 
+    repartion();
+    return true;
+  }
+
 
   /**
    * The main method
@@ -153,7 +191,7 @@ public class FrontEndServer {
       System.out.println("USAGE: [Other FrontEnd Server]");
       return;
     }
-
+    
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
