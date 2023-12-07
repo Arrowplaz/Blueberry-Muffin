@@ -4,8 +4,8 @@ CLASSPATH=/usr/share/java/xmlrpc-client.jar:/usr/share/java/xmlrpc-server.jar:/u
 
 default: DatabaseServer.class FrontEndServer.class Client.class
 
-DatabaseServer.class: CatalogServer.java
-	javac -cp $(CLASSPATH) CatalogServer.java
+DatabaseServer.class: DatabaseServer.java
+	javac -cp $(CLASSPATH) DatabaseServer.java
 
 FrontEndServer.class: FrontEndServer.java
 	javac -cp $(CLASSPATH) FrontEndServer.java

@@ -1,6 +1,8 @@
 import org.apache.xmlrpc.webserver.WebServer; 
 import org.apache.xmlrpc.server.XmlRpcServer;
 import org.apache.xmlrpc.server.PropertyHandlerMapping;
+import org.apache.xmlrpc.client.XmlRpcClient;
+import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,22 +24,44 @@ public class DatabaseServer {
    * The primary data structure meant to the data
    */
   private static Map<String, ArrayList<Book>> database = new HashMap<String, ArrayList<Book>>();
+  private static final int PORTNUMBER = 8412;
+
+    /**
+   * The helper method to create a client
+   * 
+   * @param hostName: hostname of the client
+   * @param portNum: the portnum of the client
+   * 
+   * @return the client
+   */
+  public static XmlRpcClient createClient(String ip) {
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    XmlRpcClient client = null;
+    try {
+      config.setServerURL(new URL("http://" + ip + ":" + PORTNUMBER));
+      client = new XmlRpcClient();
+      client.setConfig(config);
+    } catch (Exception e) {
+      System.err.println("Client exception: " + e);
+    }
+    return client;
+  }
+
 
   /**
    * A getter method to determine which categories (keys) this database contains
    * @return
    */
-  private static Set<String> getCategories(){
+  public static Set<String> getCategories(){
     return database.keySet();
   }
-
   
   /**
    * 
    * @param genre
    * @return
    */
-  private ArrayList<Book> GET(String genre){
+  public ArrayList<Book> getCategory(String genre){
     if(database.keySet().contains(genre)){
       return database.get(genre);
     }
@@ -45,7 +69,7 @@ public class DatabaseServer {
   }
 
 
-  public static boolean DELETE(String genre){
+  public static boolean deleteFile(String genre, String fileName){
     if(database.keySet().contains(genre)){
       database.remove(genre);
       return true;
@@ -53,7 +77,7 @@ public class DatabaseServer {
     return false;
   }
 
-  public static boolean ADD(String genre, Book newBook){
+  public static boolean add(String genre, Book newBook){
     if(database.keySet().contains(genre)){
       database.get(genre).add(newBook);
       return true;
@@ -61,43 +85,65 @@ public class DatabaseServer {
     return false;
   }
 
-  private void sendData(String frontendIP){
+  private static boolean joinDatabase(String databaseIp, String entryPoint) {
+    XmlRpcClient client = createClient(entryPoint);
+    List<String> params = new ArrayList<String>();
+    params.add(databaseIp);
+    params.add(entryPoint);
+
+    try {
+      Boolean result = (boolean) client.execute("FrontEndServer.addDatabase", params.toArray());
+      return true;
+    }
+    catch(Exception e){
+      System.err.println("Client exception: " + e);
+      return false;
+    }
+  }
+
+  // eman note: I suspect that this will be, fileName, and a byte array
+  // of the contents
+  public void sendData(String frontendIP){
     final int PORTNUMBER = 8412;
     //Create client
     //Send over data
     //Recieve either a success or failure
-    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
-    XmlRpcClient client = null;
-    try {
-      config.setServerURL(new URL("http://" + frontendIP + ":" + PORTNUMBER));
-      client = new XmlRpcClient();
-      client.setConfig(config);
-    } catch (Exception e) {
-      System.err.println("Client exception: " + e);
-    }
-    
+    XmlRpcClient client = createClient(frontendIP);
     List<String> params = new ArrayList<>();
     params.add("PLACEHOLDER");
 
     try{
-      Boolean result = client.execute("Database.recieveData", params.toArray());
+      Boolean result = (boolean) client.execute("Database.recieveData", params.toArray());
     }
     catch(Exception e){
       System.err.println("Client exception: " + e);
     }
   }
 
+  // do we need to lock in repartitioning?
+  public void sendToDatabase(String category, String databaseIp) {
+    // send the files in the category to the database IP
+  }
 
-  public void recieveData(String category, ArrayList<Book> incoming){
+  // ArrayList<Book> will be a byte array for files
+  public boolean recieveData(String category, ArrayList<Book> incoming){
     database.put(category, incoming);
+    return true;
   }
   /**
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length != 0) {
-      System.out.println("Usage: No arguments");
+    if (args.length < 1) {
+      System.out.println("USAGE: [Own Database IP] [FrontEnd entry point]");
       return;
+    }
+
+    if (joinDatabase(args[0], args[1])) {
+      System.out.println("Successfully joined front-end with entry point: " + args[1]);
+    }
+    else {
+      System.out.println("Database addition went wrong for some reason");
     }
 
     try {

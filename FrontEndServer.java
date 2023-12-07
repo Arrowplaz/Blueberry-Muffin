@@ -65,6 +65,7 @@ public class FrontEndServer {
     // how would repartitioning work 
     // hash with old values and send to different systems
     // hopefully it's uniform enough that it doesn't overload the system
+    // Should this server be unavailable during repartitions? yes? --> ask barker 
     for (String category: categories) {
       int oldHash = hash(category, databases.size() - 1);
       int newHash = hash(category, databases.size());
@@ -100,8 +101,9 @@ public class FrontEndServer {
     repartion();
     return true;
   }
+
   
-  public String addItem(String category, String contents){
+  public boolean addItem(String category, String contents){
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
@@ -110,16 +112,15 @@ public class FrontEndServer {
 
     // in addition to this, send requests to all other frontEnds
     try {
-      String result = (String) client.execute("Database.addItem", params);//
-      return result;
+      String result = (String) client.execute("Database.addItem", params);
+      return false;
     } catch (Exception e) {
       return "(FrontEnd, search) Client Exception: " + e;
     }
     
     for (String frontEndIp: otherFrontEnds) {
       try {
-        XmlRpcClient client = createClient(frontEndIp);
-        String client.execute("FrontEnd.addItem", params);
+        client.execute("FrontEnd.addItem", params);
       } catch (exception e) {
         System.out.println("failed to addItem to Database");
       }
@@ -161,6 +162,14 @@ public class FrontEndServer {
       if (result == true) {
         System.out.println("Successfully added new FrontEnd to " + frontEnd);
       } 
+      else {
+        // we can incorporate a logging thing to make debugging easier, but
+        // this shouldn't happen 
+        // is this how we should handle this tho? it could be that the frontEnd 
+        // is inaccessible, mark this for checking later
+        System.out.println("Unsuccessfully new IP tried to add to FrontEnd " + frontEnd);
+        return null;
+      }
     } 
     // send the frontEnds to the new joining frontEnd
     otherFrontEnds.add(newFrontEndIp);
@@ -182,18 +191,6 @@ public class FrontEndServer {
     }
 
     return false;
-  }
-  
-  public boolean addDatabase(String ipAddress){
-    // check if database already in 
-    if (databases.contains(ipAddress)){
-      // might want to just return true here
-      return false;
-    }
-
-    databases.add(ipAddress); 
-    repartion();
-    return true;
   }
 
 
@@ -224,10 +221,20 @@ public class FrontEndServer {
    */
   public static void main(String[] args) {
     if (args.length < 1) {
-      System.out.println("USAGE: [Other FrontEnd Server]");
+      System.out.println("USAGE: [Own front-end Ip] [Other FrontEnd Server]");
       return;
     }
-    
+
+    if (joinFrontEnd(args[0], args[1])) {
+      System.out.println("Successfully joined front-end with entry point: " + args[1]);
+      System.out.println("Please add Database[s]");
+    }
+    else {
+      // we have to deal with this failure, let's say
+      // some of the frontEnds get added the new frontEnd but not all of the
+      System.out.println("FrontEnd addition went wrong for some reason");
+    }
+
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
