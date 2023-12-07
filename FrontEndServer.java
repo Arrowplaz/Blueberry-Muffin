@@ -9,6 +9,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.server.PropertyHandlerMapping;
 import org.apache.xmlrpc.webserver.WebServer; 
 import org.apache.xmlrpc.server.XmlRpcServer;
+import java.util.Scanner;
 
 /**
  * The Front End Server of the project
@@ -87,7 +88,20 @@ public class FrontEndServer {
   }
   
   
-  public boolean addItem(String category, String contents){
+  public boolean addDatabase(String ipAddress){
+    // check if database already in 
+    if (databases.contains(ipAddress)){
+      // might want to just return true here
+      return false;
+    }
+    databases.add(ipAddress); 
+    // do we need to notify the database at all or?
+    // fault tolerance all the way
+    repartion();
+    return true;
+  }
+  
+  public String addItem(String category, String contents){
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
@@ -180,6 +194,28 @@ public class FrontEndServer {
     databases.add(ipAddress); 
     repartion();
     return true;
+  }
+
+
+  public String lookupCategory(String category){
+    int index = hash(category, databases.size());
+    XmlRpcClient client = createClient(databases.get(index));
+    List<String> params = new ArrayList<>();
+    params.add(category);
+
+    try{
+      String result = (String) client.execute("Database.GET", params);
+      if(result != null){
+        return result;
+      }
+      else{
+        return null;
+      }
+    }
+    catch(Exception e){
+      System.err.println("Front end failure" + e);
+    }
+
   }
 
 

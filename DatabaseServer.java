@@ -8,11 +8,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * A simple example XML-RPC server program.
+ * The class for the databases being used in the Giant Scale Service
+ * Besides containing all our data, has the ability to send and recieve data to and from 
+ * front end servers and other databases
  */
 public class DatabaseServer { 
   /**
@@ -20,11 +23,20 @@ public class DatabaseServer {
    */
   private static Map<String, ArrayList<Book>> database = new HashMap<String, ArrayList<Book>>();
 
-  private static Set<String> getGenres(){
+  /**
+   * A getter method to determine which categories (keys) this database contains
+   * @return
+   */
+  private static Set<String> getCategories(){
     return database.keySet();
   }
 
   
+  /**
+   * 
+   * @param genre
+   * @return
+   */
   private ArrayList<Book> GET(String genre){
     if(database.keySet().contains(genre)){
       return database.get(genre);
@@ -49,6 +61,36 @@ public class DatabaseServer {
     return false;
   }
 
+  private void sendData(String frontendIP){
+    final int PORTNUMBER = 8412;
+    //Create client
+    //Send over data
+    //Recieve either a success or failure
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    XmlRpcClient client = null;
+    try {
+      config.setServerURL(new URL("http://" + frontendIP + ":" + PORTNUMBER));
+      client = new XmlRpcClient();
+      client.setConfig(config);
+    } catch (Exception e) {
+      System.err.println("Client exception: " + e);
+    }
+    
+    List<String> params = new ArrayList<>();
+    params.add("PLACEHOLDER");
+
+    try{
+      Boolean result = client.execute("Database.recieveData", params.toArray());
+    }
+    catch(Exception e){
+      System.err.println("Client exception: " + e);
+    }
+  }
+
+
+  public void recieveData(String category, ArrayList<Book> incoming){
+    database.put(category, incoming);
+  }
   /**
    * The main method
    */
