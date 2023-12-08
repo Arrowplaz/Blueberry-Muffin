@@ -39,6 +39,17 @@ public class FrontEndServer {
 
 
   /**
+   * A method used to ping a frontend and recieve a package
+   * Used for region smart selection
+   * 
+   * @return the string "Ping"
+   */
+  public String ping(){
+    //A magic String, can be anything
+    return "Ping";
+  }
+
+  /**
    * The helper method to create a client
    * 
    * @param hostName: hostname of the client

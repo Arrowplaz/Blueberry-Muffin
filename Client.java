@@ -3,6 +3,8 @@ import java.util.Scanner;
 import java.util.Vector;
 import java.util.ArrayList; 
 import java.net.URL;     
+import java.io.*; 
+import java.net.*; 
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 /**
@@ -22,23 +24,56 @@ public class Client {
   private final static int PORTNUMBER = 8412;
 
   /**
-   * The cached frontend the client will be interacting with
+   * The entry point into the System defined in startup
    */
-  private static String frontendIp = null;
+  private final static String entryPoint = null;
 
-  private static void intializeFrontEnd(){
-    frontendServers = new ArrayList<>();
-    //RPC call to master frontend to get all the front end servers
-    //Then do a loop to figure out best latency 
-    //Set the instance variable to that frontend
-  }
+  /**
+   * The IP address of the optimal front end
+   * as defined by our region smart selection
+   */
+  private static String optimalFrontEnd = null;
 
-  private static void findFrontEnd(){
-    //Create clock
-    //Do RPC call to each front end server
-    //Check time on clock
-    //Keep track of best time/server
-    frontendIp = frontendServers.get(0);
+
+  /**
+   * The region smart selection to choose the Frontend
+   * with the best latency to the client
+   */
+  private static void regionSmartSelect(){
+    //Create a client to the entry point
+    XmlRpcClient entryClient = createClient(entryPoint);
+
+    //Retrieve the list of all frontends
+    try{
+      List<String> frontEnds = (List<String>) client.execute("FrontEnd.getFrontEnd", null);
+    }
+    catch(Exception e){
+      System.out.println("Could not get Frontends from entry point, ensure entry point is online");
+      return;
+    }
+
+    //Keep track of the frontend with the best latency
+    String bestFrontEnd = "";
+    Long bestTime = Long.MAX_VALUE;
+
+    //Iterate over all frontends
+    for(String frontEnd: frontEnds){
+      XmlRpcClient FEClient = createClient(frontEnd);
+      try{
+        //Start Time
+        long startTime = System.nanoTime();
+        String result = (String) client.execute("FrontEnd.ping", null);
+        long endTime = System.nanoTime() - startTime
+        if(endTime < bestTime){ //Compare total time to best
+          bestTime = endTime;
+          bestFrontEnd = frontEnd;
+        }
+      }
+      catch(Exception e){
+        System.out.println("Could not ping Front end: " + frontEnd);
+      }
+    }
+    optimalFrontEnd = bestFrontEnd;
   }
 
   /**
@@ -47,7 +82,7 @@ public class Client {
    * @return The client created using the IP of the best Frontend
    */
   public static XmlRpcClient createClient(){
-    return createClient(frontendIp);
+    return createClient(optimalFrontEnd);
   }
 
   /**
@@ -149,17 +184,17 @@ public class Client {
 
     //Grab the initial Front end IP from terminal 
     if (args.length != 1) {
-      System.out.println("Usage: [Master FrontEnd IP]");
+      System.out.println("Usage: [Entry Point]");
       return;
     }
 
-    frontendIp = args[0];
+    entryPoint = args[0];
     
     //Identify the best Frontend for this user
     intializeFrontEnd();
     findFrontEnd();
 
-
+    //Take in commands from the user
      while(true){
       Scanner Scanner = new Scanner(System.in);  // Create a Scanner object
       System.out.println("Enter Function and Parameters");
