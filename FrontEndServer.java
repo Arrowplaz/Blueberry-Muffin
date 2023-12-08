@@ -250,15 +250,15 @@ public class FrontEndServer {
       System.out.println("USAGE: [Own front-end Ip] [Other FrontEnd Server]");
     }
 
-    if (joinFrontEnd(args[0], args[1])) {
-      System.out.println("Successfully joined front-end with entry point: " + args[1]);
-      System.out.println("Please add Database[s]");
-    }
-    else {
-      // we have to deal with this failure, let's say
-      // some of the frontEnds get added the new frontEnd but not all of the
-      System.out.println("FrontEnd addition went wrong for some reason");
-    }
+    // if (joinFrontEnd(args[0], args[1])) {
+    //   System.out.println("Successfully joined front-end with entry point: " + args[1]);
+    //   System.out.println("Please add Database[s]");
+    // }
+    // else {
+    //   // we have to deal with this failure, let's say
+    //   // some of the frontEnds get added the new frontEnd but not all of the
+    //   System.out.println("FrontEnd addition went wrong for some reason");
+    // }
 
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
