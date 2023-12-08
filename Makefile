@@ -5,13 +5,13 @@ CLASSPATH=/usr/share/java/xmlrpc-client.jar:/usr/share/java/xmlrpc-server.jar:/u
 default: DatabaseServer.class FrontEndServer.class Client.class
 
 DatabaseServer.class: DatabaseServer.java
-	javac -cp $(CLASSPATH) DatabaseServer.java
+	javac -Xlint:unchecked -cp $(CLASSPATH) DatabaseServer.java
 
 FrontEndServer.class: FrontEndServer.java
-	javac -cp $(CLASSPATH) FrontEndServer.java
+	javac -Xlint:unchecked -cp $(CLASSPATH) FrontEndServer.java
 
 Client.class: Client.java
-	javac -cp $(CLASSPATH) Client.java
+	javac -Xlint:unchecked -cp $(CLASSPATH) Client.java
 
 clean:
 	-rm -f *.class

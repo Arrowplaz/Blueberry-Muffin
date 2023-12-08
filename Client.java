@@ -45,9 +45,10 @@ public class Client {
 
 
     //Retrieve the list of all frontends
-    List<String> frontEnds;
+    ArrayList<String> frontEnds;
     try{
-      frontEnds = (List<String>) entryClient.execute("FrontEnd.getFrontEnd", params);
+      Object result = (Object) entryClient.execute("FrontEnd.getFrontEnd", params);
+      frontEnds = (ArrayList<String>) result;
     }
     catch(Exception e){
       System.out.println("Could not get Frontends from entry point, ensure entry point is online");
@@ -158,7 +159,9 @@ public class Client {
     params.add(Category);
 
     try{
-      ArrayList<String> result =  (ArrayList<String>) client.execute("FrontEnd.lookupCategory", params.toArray());
+      Object result =  (Object) client.execute("FrontEnd.lookupCategory", params.toArray());
+      result = (ArrayList<String>) result;
+      
       if(result != null){
         System.out.println("WE HAVE RESULT");
       }

@@ -205,9 +205,9 @@ public class FrontEndServer {
     params.add(frontEndIp);
 
     try{
-      ArrayList<String> otherFE = (ArrayList<String>) client.execute("FrontEnd.acceptFrontEnd", params);
+      Object otherFE = (Object) client.execute("FrontEnd.acceptFrontEnd", params);
       if (otherFE != null) {
-        otherFrontEnds = otherFE;
+        otherFrontEnds = (ArrayList<String>)otherFE;
       return true;
       }
       return false;
@@ -226,7 +226,7 @@ public class FrontEndServer {
     params.add(category);
 
     try{
-      String result = (String) client.execute("Database.GET", params);
+      String result = (String) client.execute("Database.getCategories", params);
       if(result != null){
         return result;
       }
