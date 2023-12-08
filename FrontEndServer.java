@@ -101,6 +101,7 @@ public class FrontEndServer {
   
   
   public boolean addDatabase(String ipAddress){
+    System.out.println(ipAddress + " wants to be added");
     // check if database already in 
     if (databases.contains(ipAddress)){
       // might want to just return true here
@@ -110,6 +111,7 @@ public class FrontEndServer {
     // do we need to notify the database at all or?
     // fault tolerance all the way
     repartion();
+    System.out.println("Successfully added!");
     return true;
   }
 
