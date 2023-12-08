@@ -92,7 +92,7 @@ public class DatabaseServer {
     params.add(entryPoint);
 
     try {
-      Boolean result = (boolean) client.execute("FrontEndServer.addDatabase", params.toArray());
+      Boolean result = (boolean) client.execute("FrontEnd.addDatabase", params.toArray());
       return true;
     }
     catch(Exception e){
@@ -134,7 +134,7 @@ public class DatabaseServer {
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length < 1) {
+    if (args.length != 2) {
       System.out.println("USAGE: [Own Database IP] [FrontEnd entry point]");
       return;
     }

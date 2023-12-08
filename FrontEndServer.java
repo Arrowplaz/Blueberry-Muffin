@@ -57,7 +57,7 @@ public class FrontEndServer {
    * 
    * @return the client
    */
-  public XmlRpcClient createClient(String ip) {
+  public static XmlRpcClient createClient(String ip) {
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
@@ -124,15 +124,15 @@ public class FrontEndServer {
     // in addition to this, send requests to all other frontEnds
     try {
       String result = (String) client.execute("Database.addItem", params);
-      return false;
     } catch (Exception e) {
-      return "(FrontEnd, search) Client Exception: " + e;
+      System.out.println("(FrontEnd, search) Client Exception: " + e);
+      return false;
     }
     
     for (String frontEndIp: otherFrontEnds) {
       try {
         client.execute("FrontEnd.addItem", params);
-      } catch (exception e) {
+      } catch (Exception e) {
         System.out.println("failed to addItem to Database");
       }
     }
@@ -147,10 +147,14 @@ public class FrontEndServer {
     return "String";
   }
 
-  public List<String> getFrontEnd(String ipAddress){
+  public List<String> recieveFrontEnd(String ipAddress){
     // send list of frontEnds to ipAddress and THEN
     // xml RPC call 
     otherFrontEnds.add(ipAddress);
+    return otherFrontEnds;
+  }
+
+  public List<String> getFrontEnds(){
     return otherFrontEnds;
   }
 
@@ -168,19 +172,24 @@ public class FrontEndServer {
       XmlRpcClient client = createClient(frontEnd);
       List<String> params = new ArrayList<String>();
       params.add(newFrontEndIp);
-
-      boolean result = (boolean) client.execute("FrontEndServer.addItem", params);
-      if (result == true) {
-        System.out.println("Successfully added new FrontEnd to " + frontEnd);
-      } 
-      else {
+    
+    
+      try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
         // is this how we should handle this tho? it could be that the frontEnd 
         // is inaccessible, mark this for checking later
-        System.out.println("Unsuccessfully new IP tried to add to FrontEnd " + frontEnd);
-        return null;
+        boolean result = (boolean) client.execute("FrontEnd.addItem", params);
+        if(result)System.out.println("Successfully added new FrontEnd to " + frontEnd);
+        else{
+          System.out.println("Unsuccessfully new IP tried to add to FrontEnd " + frontEnd);
+          return null;
+        }
       }
+      catch(Exception e){
+        System.out.println("Failed to add Item");
+      }
+      
     } 
     // send the frontEnds to the new joining frontEnd
     otherFrontEnds.add(newFrontEndIp);
@@ -195,13 +204,18 @@ public class FrontEndServer {
     List<String> params = new ArrayList<String>();
     params.add(frontEndIp);
 
-    ArrayList<String> result = (ArrayList<String>) client.execute("FrontEndServer.acceptFrontEnd", params);
-    if (result != null) {
-      otherFrontEnds = result;
+    try{
+      ArrayList<String> otherFE = (ArrayList<String>) client.execute("FrontEnd.acceptFrontEnd", params);
+      if (otherFE != null) {
+        otherFrontEnds = otherFE;
       return true;
+      }
+      return false;
     }
-
-    return false;
+    catch(Exception e){
+      System.out.println("Failed to get front ends from: " + frontEndIp);
+      return false;
+    } 
   }
 
 
@@ -222,6 +236,7 @@ public class FrontEndServer {
     }
     catch(Exception e){
       System.err.println("Front end failure" + e);
+      return null;
     }
 
   }

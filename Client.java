@@ -3,8 +3,6 @@ import java.util.Scanner;
 import java.util.Vector;
 import java.util.ArrayList; 
 import java.net.URL;     
-import java.io.*; 
-import java.net.*; 
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 /**
@@ -42,10 +40,13 @@ public class Client {
   private static void regionSmartSelect(){
     //Create a client to the entry point
     XmlRpcClient entryClient = createClient(entryPoint);
+    List<String> params = new ArrayList<>();
+
 
     //Retrieve the list of all frontends
+    List<String> frontEnds;
     try{
-      List<String> frontEnds = (List<String>) client.execute("FrontEnd.getFrontEnd", null);
+      frontEnds = (List<String>) entryClient.execute("FrontEnd.getFrontEnd", params);
     }
     catch(Exception e){
       System.out.println("Could not get Frontends from entry point, ensure entry point is online");
@@ -62,8 +63,8 @@ public class Client {
       try{
         //Start Time
         long startTime = System.nanoTime();
-        String result = (String) client.execute("FrontEnd.ping", null);
-        long endTime = System.nanoTime() - startTime
+        String result = (String) entryClient.execute("FrontEnd.ping", params);
+        long endTime = System.nanoTime() - startTime;
         if(endTime < bestTime){ //Compare total time to best
           bestTime = endTime;
           bestFrontEnd = frontEnd;
@@ -118,7 +119,7 @@ public class Client {
       params.add(outgoingFile);
 
       try{
-        Boolean result = client.execute("FrontEnd.addBook", params.toArray());
+        Boolean result = (Boolean) client.execute("FrontEnd.addBook", params.toArray());
         if(result){
           System.out.println("File: " + outgoingFile + " was Sucessfully added to"); 
         }
@@ -142,8 +143,13 @@ public class Client {
     params.add(Category);
 
     try{
-      //FIX 
-      ArrayList<String> result = client.execute("FrontEnd.addBook", params.toArray());
+      ArrayList<String> result =  (ArrayList<String>) client.execute("FrontEnd.lookupCategory", params.toArray());
+      if(result != null){
+        System.out.println("WE HAVE RESULT");
+      }
+      else{
+        System.out.println("Could not get data");
+      }
     }
     catch(Exception e){
       System.err.println("Client exception: " + e);
@@ -162,7 +168,7 @@ public class Client {
     params.add(databaseIP);
     
     try{
-      Boolean result = client.execute("FrontEnd.addDatabase", params.toArray());
+      Boolean result = (Boolean) client.execute("FrontEnd.addDatabase", params.toArray());
       if(result){
         System.out.println("Database was successfully added to region: " + frontendIP );
       }
@@ -188,11 +194,10 @@ public class Client {
       return;
     }
 
-    entryPoint = args[0];
+    String entryPoint = args[0];
     
     //Identify the best Frontend for this user
-    intializeFrontEnd();
-    findFrontEnd();
+    regionSmartSelect();
 
     //Take in commands from the user
      while(true){
@@ -211,6 +216,7 @@ public class Client {
           break;
 
         case "addBook":
+          //LOOK AT THIS
           addFile("genre", cmdLineParse[1]);
           break;
         
