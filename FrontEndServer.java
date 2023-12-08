@@ -248,7 +248,6 @@ public class FrontEndServer {
   public static void main(String[] args) {
     if (args.length < 1) {
       System.out.println("USAGE: [Own front-end Ip] [Other FrontEnd Server]");
-      return;
     }
 
     if (joinFrontEnd(args[0], args[1])) {
