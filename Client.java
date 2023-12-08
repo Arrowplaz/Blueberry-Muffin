@@ -1,7 +1,8 @@
 import java.util.List;
 import java.util.Scanner;
 import java.util.Vector;
-import java.util.ArrayList; 
+import java.util.ArrayList;
+import java.io.File;
 import java.net.URL;     
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
@@ -113,10 +114,24 @@ public class Client {
    * @param outgoingFile The file itself
    */
   private static void addFile(String category, String outgoingFile){
+    String dataToBeSent = "";
+    try{
+      File file = new File(outgoingFile);
+      Scanner fileReader = new Scanner(file);
+      while(fileReader.hasNextLine()){
+      dataToBeSent += fileReader.nextLine();
+      }
+    }
+    catch(Exception e){
+      System.out.println("Could not open and/or read Filepath: " + outgoingFile);
+      return;
+    }
+
+
       XmlRpcClient client = createClient();
       List<String> params = new ArrayList<>();
       params.add(category);
-      params.add(outgoingFile);
+      params.add(dataToBeSent);
 
       try{
         Boolean result = (Boolean) client.execute("FrontEnd.addBook", params.toArray());
@@ -217,7 +232,7 @@ public class Client {
 
         case "addBook":
           //LOOK AT THIS
-          addFile("genre", cmdLineParse[1]);
+          addFile(cmdLineParse[1], cmdLineParse[2]);
           break;
         
         case "addDatabase":
