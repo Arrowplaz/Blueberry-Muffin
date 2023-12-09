@@ -115,9 +115,14 @@ public class FrontEndServer {
     return true;
   }
 
+  public void removeFrontEnds() {
+    return;
+  }
   
   public boolean addItem(String category, String contents){
     int index = hash(category, databases.size());
+    List<String> deadFrontEnds = new ArrayList<String>();
+
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
     params.add(category);
@@ -135,8 +140,14 @@ public class FrontEndServer {
       try {
         client.execute("FrontEnd.addItem", params);
       } catch (Exception e) {
-        System.out.println("failed to addItem to Database");
+        System.out.println("failed to addItem to Database to " + frontEndIp);
+        // then remove the frontEnd from your list
+        deadFrontEnds.add(frontEndIp);
       }
+    }
+    // remove
+    for (String deadFrontEnd : deadFrontEnds) {
+      otherFrontEnds.remove(deadFrontEnd);
     }
     // call an RPC call with databases[index]
     return true;
@@ -228,7 +239,7 @@ public class FrontEndServer {
     params.add(category);
 
     try{
-      String result = (String) client.execute("Database.getCategories", params);
+      String result = (String) client.execute("Database.getCategory", params);
       if(result != null){
         return result;
       }
@@ -240,7 +251,6 @@ public class FrontEndServer {
       System.err.println("Front end failure" + e);
       return null;
     }
-
   }
 
 
@@ -248,18 +258,21 @@ public class FrontEndServer {
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length < 1) {
+    if (args.length < 1 && args.length != 2) {
       System.out.println("USAGE: [Own front-end Ip] [Other FrontEnd Server]");
+      return;
     }
 
-    if (joinFrontEnd(args[0], args[1])) {
-      System.out.println("Successfully joined front-end with entry point: " + args[1]);
-      System.out.println("Please add Database[s]");
-    }
-    else {
-      // we have to deal with this failure, let's say
-      // some of the frontEnds get added the new frontEnd but not all of the
-      System.out.println("FrontEnd addition went wrong for some reason");
+    if (args.length == 0) {
+      if (joinFrontEnd(args[0], args[1])) {
+        System.out.println("Successfully joined front-end with entry point: " + args[1]);
+        System.out.println("Please add Database[s]");
+      }
+      else {
+        // we have to deal with this failure, let's say
+        // some of the frontEnds get added the new frontEnd but not all of the
+        System.out.println("FrontEnd addition went wrong for some reason");
+      }
     }
 
     try {
