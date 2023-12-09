@@ -186,16 +186,15 @@ public class FrontEndServer {
 
   public List<String> acceptFrontEnd(String newFrontEndIp) {
     // may lead to an issue, may need to copy instead of merely assign
+    System.out.println("inside acceptFrontEnd");
     List<String> frontEnds = otherFrontEnds;
+
     for (String frontEnd : otherFrontEnds) {
       XmlRpcClient client = createClient(frontEnd);
       List<String> params = new ArrayList<String>();
-
       try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
-        // is this how we should handle this tho? it could be that the frontEnd 
-        // is inaccessible, mark this for checking later
         boolean result = (boolean) client.execute("FrontEnd.addFrontEnd", params);
         if (result) {
           System.out.println("Successfully added new FrontEnd to " + frontEnd);
@@ -211,6 +210,9 @@ public class FrontEndServer {
         // 
        otherFrontEnds.remove(frontEnd);
       }
+     // Lastly, add to own list first
+      otherFrontEnds.add(newFrontEndIp);
+
     } 
     // return the arraylist without the newIp's own IP
     return frontEnds;
@@ -228,13 +230,15 @@ public class FrontEndServer {
       if (otherFE != null) {
         // add the entry point to your frontEnds
         otherFrontEnds.add(entryPoint);
+        System.out.println("before casting");
         otherFrontEnds = (ArrayList<String>)otherFE;
       return true;
       }
       return false;
     }
     catch(Exception e){
-      System.out.println("Failed to get front ends from: " + frontEndIp);
+      System.out.println("Exception: " + e);
+      System.out.println("Failed to get front ends from: " + entryPoint);
       return false;
     } 
   }
