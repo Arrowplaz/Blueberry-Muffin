@@ -89,7 +89,6 @@ public class DatabaseServer {
     XmlRpcClient client = createClient(entryPoint);
     List<String> params = new ArrayList<String>();
     params.add(databaseIp);
-    params.add(entryPoint);
 
     try {
       Boolean result = (boolean) client.execute("FrontEnd.addDatabase", params.toArray());
