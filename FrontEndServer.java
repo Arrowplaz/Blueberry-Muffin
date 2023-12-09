@@ -157,7 +157,21 @@ public class FrontEndServer {
    * this function may not be needed
    */
   public String getFile(String category, String fileName) {
-    return "String";
+    int index = hash(category, databases.size());
+    XmlRpcClient client = createClient(databases.get(index));
+    List<String> params = new ArrayList<String>();
+    params.add(category);
+    params.add(fileName);
+
+    try{
+      return (String) client.execute("Database.getFile", params);
+    }
+    catch (Exception e){
+      System.out.println("Failed to get file from Database");
+      // remove database from databases since it's not accesible
+      databases.remove(databases.get(index));
+      return null;
+    } 
   }
 
   public List<String> recieveFrontEnd(String ipAddress){

@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ public class DatabaseServer {
   /**
    * The primary data structure meant to the data
    */
-  private static Map<String, ArrayList<Book>> database = new HashMap<String, ArrayList<Book>>();
+  private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
   private static final int PORTNUMBER = 8412;
 
     /**
@@ -48,42 +49,60 @@ public class DatabaseServer {
   }
 
 
-  /**
-   * A getter method to determine which categories (keys) this database contains
-   * @return
-   */
-  public static Set<String> getCategories(){
-    System.out.println("Getting categories from Database");
-    return database.keySet();
-  }
+  // /**
+  //  * A getter method to determine which categories (keys) this database contains
+  //  * @return
+  //  */
+  // public static Set<String> getCategories(){
+  //   System.out.println("Getting categories from Database");
+  //   return database.keySet();
+  // }
   
-  /**
-   * 
-   * @param genre
-   * @return
-   */
-  public ArrayList<Book> getCategory(String genre){
-    if(database.keySet().contains(genre)){
-      System.out.println("Successfully got, category!");
-      return database.get(genre);
-    }
-    else return null;
+  // /**
+  //  * 
+  //  * @param genre
+  //  * @return
+  //  */
+  // public ArrayList<Book> getCategory(String genre){
+  //   if(database.keySet().contains(genre)){
+  //     System.out.println("Successfully got, category!");
+  //     return database.get(genre);
+  //   }
+  //   System.out.println("");
+
+  //   else return null;
+  // }
+
+  public static String getFile(String category, String fileName) {
+    // turn the txt file to String and send it over
+    return fileName; 
   }
 
-
-  public static boolean deleteFile(String genre, String fileName){
-    if(database.keySet().contains(genre)){
-      database.remove(genre);
+  public static boolean deleteFile(String category, String fileName){
+    if(database.keySet().contains(category)){
+      database.remove(category);
       return true;
     }
+    // 
     return false;
   }
 
-  public static boolean add(String genre, Book newBook){
-    if(database.keySet().contains(genre)){
-      database.get(genre).add(newBook);
+  public static boolean addFile(String category, String fileName, String contents){
+    if(database.keySet().contains(category)){
+      database.get(category).add(fileName);
+      // store the file using contents and fileNa
+      // add fileName under Category folder 
       return true;
     }
+    else {
+      ArrayList<String> fileList = new ArrayList<String>();
+      fileList.add(fileName);
+      // store the file using contents and fileNa
+      // add fileName under Category folder 
+
+     database.put(category, fileList);
+    }
+
     return false;
   }
 
@@ -102,35 +121,31 @@ public class DatabaseServer {
     }
   }
 
-  // eman note: I suspect that this will be, fileName, and a byte array
-  // of the contents
-  public void sendData(String frontendIP){
+
+  public boolean sendCategory(String databaseIp, String category){
     final int PORTNUMBER = 8412;
     //Create client
     //Send over data
     //Recieve either a success or failure
-    XmlRpcClient client = createClient(frontendIP);
-    List<String> params = new ArrayList<>();
-    params.add("PLACEHOLDER");
-
-    try{
-      Boolean result = (boolean) client.execute("Database.recieveData", params.toArray());
+    for (String fileName : database.get(category)) {
+      XmlRpcClient client = createClient(databaseIp);
+      List<String> params = new ArrayList<>();
+      params.add(category);
+      params.add(fileName);
+      // change this to contents after
+      params.add(fileName);
+      try {
+        Boolean result = (boolean) client.execute("Database.addItem", params.toArray());
+      }
+      catch(Exception e){
+        System.err.println("Client exception: " + e);
+        return false;
+      }
     }
-    catch(Exception e){
-      System.err.println("Client exception: " + e);
-    }
+    // delete an entire folder after all has been sent
+    return true; 
   }
 
-  // do we need to lock in repartitioning?
-  public void sendToDatabase(String category, String databaseIp) {
-    // send the files in the category to the database IP
-  }
-
-  // ArrayList<Book> will be a byte array for files
-  public boolean recieveData(String category, ArrayList<Book> incoming){
-    database.put(category, incoming);
-    return true;
-  }
   /**
    * The main method
    */
