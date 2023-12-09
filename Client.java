@@ -48,6 +48,7 @@ public class Client {
     ArrayList<String> frontEnds;
     try{
       Object result = (Object) entryClient.execute("FrontEnd.getFrontEnd", params);
+      
       frontEnds = (ArrayList<String>) result;
     }
     catch(Exception e){
@@ -154,14 +155,16 @@ public class Client {
    * @param Category The category being looked up
    */
   private static void lookupCategory(String Category){
+    System.out.println("STARTING LOOKUP");
     XmlRpcClient client = createClient();
     List<String> params = new ArrayList<>();
     params.add(Category);
 
     try{
+      System.out.println("Executing");
       Object result =  (Object) client.execute("FrontEnd.lookupCategory", params.toArray());
       result = (ArrayList<String>) result;
-      
+      System.out.println("SUCCESS");
       if(result != null){
         System.out.println("WE HAVE RESULT");
       }
@@ -223,28 +226,33 @@ public class Client {
       System.out.println("Enter Function and Parameters");
 
       String[] cmdLineParse = Scanner.nextLine().split(" ");
-      if(cmdLineParse.length != 3){
-        System.out.println("Usage: [Function] [Param]");
+      if(cmdLineParse.length < 2 || cmdLineParse.length > 3){
+        System.out.println("Usage: [Function] [Params]");
         continue;
       }
       else{
           switch(cmdLineParse[0]){
-        case "lookupCategory":
+        case "lookup":
           lookupCategory(cmdLineParse[1]);
           break;
 
         case "addBook":
-          //LOOK AT THIS
+          if(cmdLineParse.length != 3){
+            System.out.println("addBook Usage: [Category] [File]");
+          }
           addFile(cmdLineParse[1], cmdLineParse[2]);
           break;
         
         case "addDatabase":
+          if(cmdLineParse.length != 3){
+            System.out.println("addDatabase Usage: [Frontend IP] [Database IP]");
+          }
           addDatabase(cmdLineParse[1], cmdLineParse[2]);
           break;
 
         default:
           System.out.println("Invalid function name");
-          System.out.println("Functions: lookupCategory, addBook, addDatabase");
+          System.out.println("Functions: lookup, addBook, addDatabase");
           return;
       }
       }
