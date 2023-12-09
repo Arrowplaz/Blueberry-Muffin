@@ -179,6 +179,7 @@ public class FrontEndServer {
   }
 
   public boolean addFrontEnd(String ipAddress) {
+    // failure case: when the ipAddress already exists?
     otherFrontEnds.add(ipAddress);
     return true;
   }
@@ -225,6 +226,8 @@ public class FrontEndServer {
     try{
       Object otherFE = (Object) client.execute("FrontEnd.acceptFrontEnd", params);
       if (otherFE != null) {
+        // add the entry point to your frontEnds
+        otherFrontEnds.add(entryPoint);
         otherFrontEnds = (ArrayList<String>)otherFE;
       return true;
       }
