@@ -174,13 +174,6 @@ public class FrontEndServer {
     } 
   }
 
-  public List<String> recieveFrontEnd(String ipAddress){
-    // send list of frontEnds to ipAddress and THEN
-    // xml RPC call 
-    otherFrontEnds.add(ipAddress);
-    return otherFrontEnds;
-  }
-
   public List<String> getFrontEnds(){
     return otherFrontEnds;
   }
@@ -194,32 +187,30 @@ public class FrontEndServer {
     // may lead to an issue, may need to copy instead of merely assign
     List<String> frontEnds = otherFrontEnds;
     for (String frontEnd : otherFrontEnds) {
-      // rpc call to add that frontEnd to their frontEnds, we can add error handling later
-      // can change returns for debugging
       XmlRpcClient client = createClient(frontEnd);
       List<String> params = new ArrayList<String>();
-      params.add(newFrontEndIp);
-    
-    
+
       try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
         // is this how we should handle this tho? it could be that the frontEnd 
         // is inaccessible, mark this for checking later
-        boolean result = (boolean) client.execute("FrontEnd.addItem", params);
-        if(result)System.out.println("Successfully added new FrontEnd to " + frontEnd);
+        boolean result = (boolean) client.execute("FrontEnd.addFrontEnd", params);
+        if (result) {
+          System.out.println("Successfully added new FrontEnd to " + frontEnd);
+        } 
         else{
-          System.out.println("Unsuccessfully new IP tried to add to FrontEnd " + frontEnd);
-          return null;
+          // theoretically this code block should never be accessed
+          System.out.println("Unsuccessfully tried to add new IP to FrontEnd " + frontEnd);
         }
       }
       catch(Exception e){
-        System.out.println("Failed to add Item");
+        // remove the FrontEnd from frontEnds (eventually other frontEnds will know that one
+        // is down) --> how? --> only when adding a File, perhaps we should send it to 
+        // 
+       otherFrontEnds.remove(frontEnd);
       }
-      
     } 
-    // send the frontEnds to the new joining frontEnd
-    otherFrontEnds.add(newFrontEndIp);
     // return the arraylist without the newIp's own IP
     return frontEnds;
   }
