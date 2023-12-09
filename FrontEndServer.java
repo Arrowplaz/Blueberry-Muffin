@@ -233,13 +233,16 @@ public class FrontEndServer {
 
 
   public String lookupCategory(String category){
+    System.out.println("STARTING LOOKUP");
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<>();
     params.add(category);
 
     try{
-      String result = (String) client.execute("Database.getCategory", params);
+      System.out.println("Executing");
+      String result = (String) client.execute("Database.getCategories", params);
+      System.out.println("Success");
       if(result != null){
         return result;
       }
@@ -278,7 +281,7 @@ public class FrontEndServer {
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
-      WebServer server = new WebServer(9182);
+      WebServer server = new WebServer(PORTNUMBER);
       xmlRpcServer = server.getXmlRpcServer();
       phm.addHandler("FrontEnd", FrontEndServer.class);
       xmlRpcServer.setHandlerMapping(phm);
