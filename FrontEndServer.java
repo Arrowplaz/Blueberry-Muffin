@@ -269,12 +269,12 @@ public class FrontEndServer {
    * The main method
    */
   public static void main(String[] args) {
-    if (args.length < 1 && args.length != 2) {
+    if (args.length != 0 && args.length != 2) {
       System.out.println("USAGE: [Own front-end Ip] [Other FrontEnd Server]");
       return;
     }
 
-    if (args.length == 0) {
+    if (args.length != 0) {
       if (joinFrontEnd(args[0], args[1])) {
         System.out.println("Successfully joined front-end with entry point: " + args[1]);
         System.out.println("Please add Database[s]");
