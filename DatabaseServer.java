@@ -53,6 +53,7 @@ public class DatabaseServer {
    * @return
    */
   public static Set<String> getCategories(){
+    System.out.println("Getting categories from Database");
     return database.keySet();
   }
   
@@ -63,6 +64,7 @@ public class DatabaseServer {
    */
   public ArrayList<Book> getCategory(String genre){
     if(database.keySet().contains(genre)){
+      System.out.println("Successfully got, category!");
       return database.get(genre);
     }
     else return null;
