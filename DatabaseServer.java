@@ -95,7 +95,8 @@ public class DatabaseServer {
    * 
    * @return the contents of a file as a String
    */
-  public static String getItem(String category, String fileName) {
+  public String getItem(String category, String fileName) {
+    System.out.println("GETTING ITEM");
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
     if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
       try{
@@ -111,15 +112,15 @@ public class DatabaseServer {
       }
       catch(Exception e){
         System.out.println("Database Error: " + e);
-        return null;
+        return "";
       }
     }
     else{
-      return null;
+      return "";
     }
   }
 
-  public static boolean deleteFile(String category, String fileName){
+  public boolean deleteFile(String category, String fileName){
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
     if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
       File currFile = new File(filePath);
@@ -136,7 +137,7 @@ public class DatabaseServer {
     }
   }
 
-  public static boolean addItem(String category, String fileName, String contents){
+  public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
     //If the category folder doesnt exist, make it
