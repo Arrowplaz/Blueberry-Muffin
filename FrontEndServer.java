@@ -226,12 +226,15 @@ public class FrontEndServer {
     params.add(frontEndIp);
 
     try{
-      Object otherFE = (Object) client.execute("FrontEnd.acceptFrontEnd", params);
+      Object[] otherFE = (Object[]) client.execute("FrontEnd.acceptFrontEnd", params);
       if (otherFE != null) {
         // add the entry point to your frontEnds
-        otherFrontEnds.add(entryPoint);
-        System.out.println("before casting");
-        otherFrontEnds = (ArrayList<String>)otherFE;
+        System.out.println("before loop");
+        for (Object frontEnd : otherFE) {
+          System.out.println(frontEnd);
+          otherFrontEnds.add(frontEnd.toString());
+        }
+        
       return true;
       }
       return false;
