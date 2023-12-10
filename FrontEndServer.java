@@ -119,13 +119,14 @@ public class FrontEndServer {
     return;
   }
   
-  public Boolean addItem(String category, String contents){
+  public Boolean addItem(String category, String fileName, String contents){
     int index = hash(category, databases.size());
     List<String> deadFrontEnds = new ArrayList<String>();
 
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
     params.add(category);
+    params.add(fileName);
     params.add(contents);
 
     // in addition to this, send requests to all other frontEnds
@@ -157,6 +158,7 @@ public class FrontEndServer {
    * this function may not be needed
    */
   public String getItem(String category, String fileName) {
+    System.out.println("Size of database: " + databases.size());
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
