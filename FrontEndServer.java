@@ -107,7 +107,9 @@ public class FrontEndServer {
       // might want to just return true here
       return false;
     }
+    System.out.println("about to add Database");
     databases.add(ipAddress); 
+    System.out.println("after add size: " + databases.size());
     // do we need to notify the database at all or?
     // fault tolerance all the way
     repartion();
@@ -131,10 +133,10 @@ public class FrontEndServer {
 
     // in addition to this, send requests to all other frontEnds
     try {
-      String result = (String) client.execute("Database.addItem", params);
+      Boolean result = (Boolean) client.execute("Database.addItem", params);
+      return result;
     } catch (Exception e) {
-      System.out.println("(FrontEnd, search) Client Exception: " + e);
-      return false;
+      System.out.println("(FrontEnd, addItem) Client Exception: " + e);
     }
     
     for (String frontEndIp: otherFrontEnds) {
@@ -165,14 +167,20 @@ public class FrontEndServer {
     params.add(category);
     params.add(fileName);
 
+
+    System.out.println("This is the category: " + category);
+    System.out.println("This is the fileName: " + fileName);
+    System.out.println("This is the database ip: " + databases.get(index));
+
     try{
-      return (String) client.execute("Database.getItem", params);
+      String result = (String) client.execute("Database.getItem", params.toArray());
+      return result;
     }
     catch (Exception e){
       System.out.println("Failed to get file from Database");
       // remove database from databases since it's not accesible
       databases.remove(databases.get(index));
-      return null;
+      return "";
     } 
   }
 
