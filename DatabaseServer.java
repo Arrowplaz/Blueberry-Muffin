@@ -14,18 +14,32 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.nio.file.Path;
+import java.io.File;
+import java.util.Scanner;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 /**
  * The class for the databases being used in the Giant Scale Service
  * Besides containing all our data, has the ability to send and recieve data to and from 
  * front end servers and other databases
  */
 public class DatabaseServer { 
+
+ private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
+  
   /**
-   * The primary data structure meant to the data
+   * The port number being used
+   * Standardized across our project
    */
-  private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
   private static final int PORTNUMBER = 8412;
+
+  /**
+   * The location of the database's working directory
+   * used for accessing the files
+   */
+  private static String workingDir;
 
     /**
    * The helper method to create a client
@@ -73,37 +87,81 @@ public class DatabaseServer {
   //   else return null;
   // }
 
+  /**
+   * Using a category and fileName, converts the file to a string for sendin
+   * 
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * 
+   * @return the contents of a file as a String
+   */
   public static String getFile(String category, String fileName) {
-    // turn the txt file to String and send it over
-    return fileName; 
+    String filePath = workingDir + "/Database/" + category + "/" + fileName;
+    if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
+      try{
+        String fileContents = "";
+        File currFile = new File(filePath);
+        Scanner fileReader = new Scanner(currFile);
+        while(fileReader.hasNextLine()){
+          fileContents += fileReader.nextLine();
+          fileContents += "\n";
+        }
+        fileReader.close();
+        return fileContents; 
+      }
+      catch(Exception e){
+        System.out.println("Database Error: " + e);
+        return null;
+      }
+    }
+    else{
+      return null;
+    }
   }
 
   public static boolean deleteFile(String category, String fileName){
-    if(database.keySet().contains(category)){
-      database.remove(category);
+    String filePath = workingDir + "/Database/" + category + "/" + fileName;
+    if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
+      File currFile = new File(filePath);
+      if(currFile.delete()){
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+    else{
+      //If we couldnt find the file, should we assuming a success case?
       return true;
     }
-    // 
-    return false;
   }
 
   public static boolean addFile(String category, String fileName, String contents){
-    if(database.keySet().contains(category)){
-      database.get(category).add(fileName);
-      // store the file using contents and fileNa
-      // add fileName under Category folder 
-      return true;
-    }
-    else {
-      ArrayList<String> fileList = new ArrayList<String>();
-      fileList.add(fileName);
-      // store the file using contents and fileNa
-      // add fileName under Category folder 
+    String filePath = workingDir + "/Database/" + category;
 
-     database.put(category, fileList);
+    //If the category folder doesnt exist, make it
+    if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
+    !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
+      File categoryDir = new File(filePath);
+      categoryDir.mkdir();
     }
 
-    return false;
+    try{
+      File newFile = new File(filePath + "/" + fileName);
+      if(newFile.createNewFile()){
+        FileWriter writer = new FileWriter(filePath + "/" + fileName);
+        writer.write(contents);
+        writer.close();
+        return true;
+      }
+      else{
+        //File already exists
+        return false;
+      }
+    }catch(Exception e){
+      System.out.println("Database Error: " + e);
+      return false;
+    }
   }
 
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
@@ -150,6 +208,10 @@ public class DatabaseServer {
    * The main method
    */
   public static void main(String[] args) {
+    workingDir = Paths.get("").toAbsolutePath().toString();
+    File Database = new File(workingDir + "/Database");
+    Database.mkdir();
+    
     if (args.length != 2) {
       System.out.println("USAGE: [Own Database IP] [FrontEnd entry point]");
       return;
@@ -161,6 +223,8 @@ public class DatabaseServer {
     else {
       System.out.println("Database addition went wrong for some reason");
     }
+
+    
 
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
