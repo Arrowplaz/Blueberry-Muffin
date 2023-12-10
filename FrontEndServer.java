@@ -100,7 +100,7 @@ public class FrontEndServer {
   }
   
   
-  public boolean addDatabase(String ipAddress){
+  public Boolean addDatabase(String ipAddress){
     System.out.println(ipAddress + " wants to be added");
     // check if database already in 
     if (databases.contains(ipAddress)){
@@ -119,7 +119,7 @@ public class FrontEndServer {
     return;
   }
   
-  public boolean addItem(String category, String contents){
+  public Boolean addItem(String category, String contents){
     int index = hash(category, databases.size());
     List<String> deadFrontEnds = new ArrayList<String>();
 
@@ -156,7 +156,7 @@ public class FrontEndServer {
   /*
    * this function may not be needed
    */
-  public String getFile(String category, String fileName) {
+  public String getItem(String category, String fileName) {
     int index = hash(category, databases.size());
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
@@ -164,7 +164,7 @@ public class FrontEndServer {
     params.add(fileName);
 
     try{
-      return (String) client.execute("Database.getFile", params);
+      return (String) client.execute("Database.getItem", params);
     }
     catch (Exception e){
       System.out.println("Failed to get file from Database");
@@ -178,7 +178,7 @@ public class FrontEndServer {
     return otherFrontEnds;
   }
 
-  public boolean addFrontEnd(String ipAddress) {
+  public Boolean addFrontEnd(String ipAddress) {
     // failure case: when the ipAddress already exists?
     otherFrontEnds.add(ipAddress);
     return true;
@@ -195,7 +195,7 @@ public class FrontEndServer {
       try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
-        boolean result = (boolean) client.execute("FrontEnd.addFrontEnd", params);
+        Boolean result = (Boolean) client.execute("FrontEnd.addFrontEnd", params);
         if (result) {
           System.out.println("Successfully added new FrontEnd to " + frontEnd);
         } 
@@ -218,7 +218,7 @@ public class FrontEndServer {
     return frontEnds;
   }
 
-  public static boolean joinFrontEnd(String frontEndIp, String entryPoint) {
+  public static Boolean joinFrontEnd(String frontEndIp, String entryPoint) {
     // RPC call to accept frontEnds
     // needs to send its IP and the entryPoint IP
     XmlRpcClient client = createClient(entryPoint);

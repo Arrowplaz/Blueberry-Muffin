@@ -95,7 +95,7 @@ public class DatabaseServer {
    * 
    * @return the contents of a file as a String
    */
-  public static String getFile(String category, String fileName) {
+  public static String getItem(String category, String fileName) {
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
     if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
       try{
@@ -136,7 +136,7 @@ public class DatabaseServer {
     }
   }
 
-  public static boolean addFile(String category, String fileName, String contents){
+  public static boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
     //If the category folder doesnt exist, make it
