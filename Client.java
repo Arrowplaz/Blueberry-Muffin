@@ -25,7 +25,7 @@ public class Client {
   /**
    * The entry point into the System defined in startup
    */
-  private final static String entryPoint = null;
+  private static String entryPoint = null;
 
   /**
    * The IP address of the optimal front end
@@ -86,7 +86,7 @@ public class Client {
    * @return The client created using the IP of the best Frontend
    */
   public static XmlRpcClient createClient(){
-    return createClient(optimalFrontEnd);
+    return createClient(entryPoint);
   }
 
   /**
@@ -129,14 +129,19 @@ public class Client {
       return;
     }
 
+      System.out.println(category);
+      System.out.println(outgoingFile);
+      System.out.println(dataToBeSent);
 
       XmlRpcClient client = createClient();
       List<String> params = new ArrayList<>();
       params.add(category);
+      params.add(outgoingFile);
       params.add(dataToBeSent);
 
+
       try{
-        Boolean result = (Boolean) client.execute("FrontEnd.addBook", params.toArray());
+        Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
         if(result){
           System.out.println("File: " + outgoingFile + " was Sucessfully added to"); 
         }
@@ -154,16 +159,20 @@ public class Client {
    * Prints the results in the console
    * @param Category The category being looked up
    */
-  private static void lookupCategory(String Category){
+  private static void lookupCategory(String Category, String Filename){
     System.out.println("STARTING LOOKUP");
     XmlRpcClient client = createClient();
     List<String> params = new ArrayList<>();
     params.add(Category);
+    params.add(Filename);
+
+    System.out.println(Category);
+    System.out.println(Filename);
 
     try{
       System.out.println("Executing");
-      Object result =  (Object) client.execute("FrontEnd.lookupCategory", params.toArray());
-      result = (ArrayList<String>) result;
+      Object result =  (Object) client.execute("FrontEnd.getItem", params.toArray());
+      result = (String) result;
       System.out.println("SUCCESS");
       if(result != null){
         System.out.println("WE HAVE RESULT");
@@ -215,10 +224,10 @@ public class Client {
       return;
     }
 
-    String entryPoint = args[0];
+    entryPoint = args[0];
     
     //Identify the best Frontend for this user
-    regionSmartSelect();
+    //regionSmartSelect();
 
     //Take in commands from the user
      while(true){
@@ -233,12 +242,13 @@ public class Client {
       else{
           switch(cmdLineParse[0]){
         case "lookup":
-          lookupCategory(cmdLineParse[1]);
+          lookupCategory(cmdLineParse[1], cmdLineParse[2]);
           break;
 
-        case "addBook":
+        case "addFile":
           if(cmdLineParse.length != 3){
             System.out.println("addBook Usage: [Category] [File]");
+            break;
           }
           addFile(cmdLineParse[1], cmdLineParse[2]);
           break;
