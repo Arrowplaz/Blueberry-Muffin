@@ -122,7 +122,7 @@ public class FrontEndServer {
     return;
   }
   
-  public Boolean addItem(String category, String fileName, String contents){
+  public Boolean addItem(String category, String fileName, String contents, String leader){
     System.out.println("Adding item...");
     int index = hash(category, databases.size());
     List<String> deadFrontEnds = new ArrayList<String>();
@@ -132,7 +132,7 @@ public class FrontEndServer {
     params.add(category);
     params.add(fileName);
     params.add(contents);
-
+    
     // in addition to this, send requests to all other frontEnds
     try {
       // think about returns here
@@ -144,8 +144,15 @@ public class FrontEndServer {
     System.out.println("About to add items to other FrontEnds");
     System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
 
+    // to avoid a recursive add where they all add to each other
+    if (leader == "NO") {
+      System.out.println("Not coordinator, not adding to other FrontEnds...");
+      return true;
+    }
+
     //leading to concurrency modication errors, so placing synchronized
     // synchronized(otherFrontEnds) {
+    params.add("NO");
     for (int i = 0; i < otherFrontEnds.size(); i ++) {
       String frontEndIp = otherFrontEnds.get(i);
       System.out.println("Adding item to FE: + " + frontEndIp);
@@ -157,17 +164,9 @@ public class FrontEndServer {
       } catch (Exception e) {
         System.out.println("failed to addItem to " + frontEndIp);
         System.out.println("(FrontEnd, addItem) " + e);
-        // then remove the frontEnd from your list
-        // deadFrontEnds.add(frontEndIp);
       }
     }
 
-    // }
-    // remove
-    // for (String deadFrontEnd : deadFrontEnds) {
-    //   otherFrontEnds.remove(deadFrontEnd);
-    // }
-    // call an RPC call with databases[index]
     return true;
   }
 
@@ -205,6 +204,7 @@ public class FrontEndServer {
   public Boolean addFrontEnd(String ipAddress) {
     // failure case: when the ipAddress already exists?
     otherFrontEnds.add(ipAddress);
+    System.out.println("(add FrontEnd, Amount of frontEnds now: " + otherFrontEnds.size());
     return true;
   }
 
@@ -218,7 +218,7 @@ public class FrontEndServer {
     for (int i = 0; i < otherFrontEnds.size(); i ++) {
       String frontEnd = otherFrontEnds.get(i);
       XmlRpcClient client = createClient(frontEnd);
-      
+
       try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
@@ -241,7 +241,7 @@ public class FrontEndServer {
     } 
     // Lastly, add to own list first
     otherFrontEnds.add(newFrontEndIp);
-    System.out.println("Amount of frontEnds now: " + otherFrontEnds.size());
+    System.out.println("(Accept frontEnd) Amount of frontEnds now: " + otherFrontEnds.size());
     // return the arraylist without the newIp's own IP
     return frontEnds;
   }

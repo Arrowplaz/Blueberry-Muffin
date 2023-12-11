@@ -138,7 +138,7 @@ public class Client {
       params.add(category);
       params.add(outgoingFile);
       params.add(dataToBeSent);
-
+      params.add("YES");
 
       try{
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
