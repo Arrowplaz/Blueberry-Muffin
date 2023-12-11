@@ -141,6 +141,7 @@ public class FrontEndServer {
     }
     
     System.out.println("About to add items to other FrontEnds");
+    System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
     for (String frontEndIp: otherFrontEnds) {
       System.out.println("Adding item to FE: + " + frontEndIp);
       try {
@@ -223,10 +224,9 @@ public class FrontEndServer {
         // 
        otherFrontEnds.remove(frontEnd);
       }
-     // Lastly, add to own list first
-      otherFrontEnds.add(newFrontEndIp);
-
     } 
+    // Lastly, add to own list first
+    otherFrontEnds.add(newFrontEndIp);
     // return the arraylist without the newIp's own IP
     return frontEnds;
   }
@@ -303,6 +303,7 @@ public class FrontEndServer {
         // we have to deal with this failure, let's say
         // some of the frontEnds get added the new frontEnd but not all of the
         System.out.println("FrontEnd addition went wrong for some reason");
+        return;
       }
     }
 
