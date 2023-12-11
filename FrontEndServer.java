@@ -244,16 +244,16 @@ public class FrontEndServer {
     try{
       Object[] otherFE = (Object[]) client.execute("FrontEnd.acceptFrontEnd", params);
       if (otherFE != null) {
-        // add the entry point to your frontEnds
+        // add frontEnds to your frontEnds
         System.out.println("before loop");
         for (Object frontEnd : otherFE) {
           System.out.println(frontEnd);
           otherFrontEnds.add(frontEnd.toString());
         }
-        
+      // then add the IP to your own frontEnd
+      otherFrontEnds.add(frontEndIp);
       return true;
       }
-      return false;
     }
     catch(Exception e){
       System.out.println("Exception: " + e);
