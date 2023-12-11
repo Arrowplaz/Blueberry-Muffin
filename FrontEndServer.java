@@ -145,6 +145,8 @@ public class FrontEndServer {
     for (String frontEndIp: otherFrontEnds) {
       System.out.println("Adding item to FE: + " + frontEndIp);
       try {
+        XmlRpcClient frontEndClient = createClient(frontEndIp);
+        // use the same params
         client.execute("FrontEnd.addItem", params);
         System.out.println("successfully added to frontEnd above");
       } catch (Exception e) {
