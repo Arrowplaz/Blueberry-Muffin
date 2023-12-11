@@ -149,6 +149,7 @@ public class FrontEndServer {
         System.out.println("successfully added to frontEnd above");
       } catch (Exception e) {
         System.out.println("failed to addItem to Database to " + frontEndIp);
+        System.out.println("(FrontEnd, addItem) " + e);
         // then remove the frontEnd from your list
         deadFrontEnds.add(frontEndIp);
       }
