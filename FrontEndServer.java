@@ -147,7 +147,7 @@ public class FrontEndServer {
       try {
         XmlRpcClient frontEndClient = createClient(frontEndIp);
         // use the same params
-        client.execute("FrontEnd.addItem", params);
+        frontEndClient.execute("FrontEnd.addItem", params);
         System.out.println("successfully added to frontEnd above");
       } catch (Exception e) {
         System.out.println("failed to addItem to Database to " + frontEndIp);
