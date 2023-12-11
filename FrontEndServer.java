@@ -201,7 +201,7 @@ public class FrontEndServer {
   public List<String> acceptFrontEnd(String newFrontEndIp) {
     // may lead to an issue, may need to copy instead of merely assign
     System.out.println("inside acceptFrontEnd");
-    List<String> frontEnds = otherFrontEnds;
+    List<String> frontEnds = new ArrayList<String>(otherFrontEnds);
 
     for (String frontEnd : otherFrontEnds) {
       XmlRpcClient client = createClient(frontEnd);
