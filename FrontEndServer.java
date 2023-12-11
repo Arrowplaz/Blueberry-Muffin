@@ -117,17 +117,16 @@ public class FrontEndServer {
     System.out.println("Successfully added!");
     return true;
   }
-
-  public void removeFrontEnds() {
-    return;
-  }
   
   public Boolean addItem(String category, String fileName, String contents, String leader){
     System.out.println("Adding item...");
     int index = hash(category, databases.size());
+    String database = databases.get(index);
+    ArrayList<String> liveFrontEnds = new ArrayList<String>();
+    System.out.println("This is the database chosen: " + database);
     List<String> deadFrontEnds = new ArrayList<String>();
 
-    XmlRpcClient client = createClient(databases.get(index));
+    XmlRpcClient client = createClient(database);
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
@@ -138,11 +137,13 @@ public class FrontEndServer {
       // think about returns here
       client.execute("Database.addItem", params);
     } catch (Exception e) {
-      System.out.println("(FrontEnd, addItem) Client Exception: " + e);
+      System.out.println("Database unaccessible: " + e);
+      System.out.println("removing database " + database);
+      synchronized (databases) {
+        databases.remove(database);
+      }
+      System.out.println("New size of databases list " + databases.size());
     }
-    
-    System.out.println("About to add items to other FrontEnds");
-    System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
 
     // to avoid a recursive add where they all add to each other
     if (leader.equals("NO")) {
@@ -150,6 +151,8 @@ public class FrontEndServer {
       return true;
     }
 
+    System.out.println("About to add items to other FrontEnds");
+    System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
     //leading to concurrency modication errors, so placing synchronized
     // synchronized(otherFrontEnds) {
     params.add("NO");
@@ -160,13 +163,19 @@ public class FrontEndServer {
         XmlRpcClient frontEndClient = createClient(frontEndIp);
         // use the same params
         frontEndClient.execute("FrontEnd.addItem", params);
+        liveFrontEnds.add(frontEndIp);
         System.out.println("successfully added to frontEnd above");
       } catch (Exception e) {
         System.out.println("failed to addItem to " + frontEndIp);
         System.out.println("(FrontEnd, addItem) " + e);
       }
     }
-
+    // update the value of otherFrontEnds to only include live 
+    // front ends
+    synchronized(otherFrontEnds) {
+      otherFrontEnds = new ArrayList<String>(liveFrontEnds);
+    }
+    System.out.println("number of alive frontEnds " + otherFrontEnds.size());
     return true;
   }
 
