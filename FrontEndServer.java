@@ -134,8 +134,8 @@ public class FrontEndServer {
 
     // in addition to this, send requests to all other frontEnds
     try {
-      Boolean result = (Boolean) client.execute("Database.addItem", params);
-      return result;
+      // think about returns here
+      client.execute("Database.addItem", params);
     } catch (Exception e) {
       System.out.println("(FrontEnd, addItem) Client Exception: " + e);
     }
