@@ -211,11 +211,14 @@ public class FrontEndServer {
   public List<String> acceptFrontEnd(String newFrontEndIp) {
     System.out.println("inside acceptFrontEnd");
     List<String> frontEnds = new ArrayList<String>(otherFrontEnds);
+    // same params 
+    List<String> params = new ArrayList<String>();
+    params.add(newFrontEndIp);
     // synchronized(otherFrontEnds) {
     for (int i = 0; i < otherFrontEnds.size(); i ++) {
       String frontEnd = otherFrontEnds.get(i);
       XmlRpcClient client = createClient(frontEnd);
-      List<String> params = new ArrayList<String>();
+      
       try{
         // we can incorporate a logging thing to make debugging easier, but
         // this shouldn't happen 
