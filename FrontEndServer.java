@@ -145,7 +145,7 @@ public class FrontEndServer {
     System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
 
     // to avoid a recursive add where they all add to each other
-    if (leader == "NO") {
+    if (leader.equals("NO")) {
       System.out.println("Not coordinator, not adding to other FrontEnds...");
       return true;
     }
