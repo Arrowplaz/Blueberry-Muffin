@@ -122,6 +122,7 @@ public class FrontEndServer {
   }
   
   public Boolean addItem(String category, String fileName, String contents){
+    System.out.println("Adding item...");
     int index = hash(category, databases.size());
     List<String> deadFrontEnds = new ArrayList<String>();
 
@@ -139,9 +140,12 @@ public class FrontEndServer {
       System.out.println("(FrontEnd, addItem) Client Exception: " + e);
     }
     
+    System.out.println("About to add items to other FrontEnds");
     for (String frontEndIp: otherFrontEnds) {
+      System.out.println("Adding item to FE: + " + frontEndIp);
       try {
         client.execute("FrontEnd.addItem", params);
+        System.out.println("successfully added to frontEnd above");
       } catch (Exception e) {
         System.out.println("failed to addItem to Database to " + frontEndIp);
         // then remove the frontEnd from your list
@@ -157,7 +161,7 @@ public class FrontEndServer {
   }
 
   /*
-   * this function may not be needed
+   * 
    */
   public String getItem(String category, String fileName) {
     System.out.println("Size of database: " + databases.size());
@@ -166,7 +170,6 @@ public class FrontEndServer {
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
-
 
     System.out.println("This is the category: " + category);
     System.out.println("This is the fileName: " + fileName);
