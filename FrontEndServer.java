@@ -251,7 +251,7 @@ public class FrontEndServer {
           otherFrontEnds.add(frontEnd.toString());
         }
       // then add the IP to your own frontEnd
-      otherFrontEnds.add(frontEndIp);
+      otherFrontEnds.add(entryPoint);
       }
       return true;
     }
