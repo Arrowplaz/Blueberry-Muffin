@@ -252,14 +252,15 @@ public class FrontEndServer {
         }
       // then add the IP to your own frontEnd
       otherFrontEnds.add(frontEndIp);
-      return true;
       }
+      return true;
     }
     catch(Exception e){
       System.out.println("Exception: " + e);
       System.out.println("Failed to get front ends from: " + entryPoint);
       return false;
     } 
+
   }
 
 
