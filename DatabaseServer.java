@@ -91,10 +91,10 @@ public class DatabaseServer {
    * @return the contents of a file as a String
    */
   public String getItem(String category, String fileName) {
-    System.out.println("GETTING ITEM");
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
-    if(Files.exists(Paths.get(filePath))){
-      // i can see this causing problems... possibly
+
+    File file = new File(filePath);
+    if(file.isFile()){
       return getFileContents(filePath);
     }
     else{
@@ -215,9 +215,9 @@ public class DatabaseServer {
         }
       }
     }
-    synchronized(objectLock) { 
-      element.delete();
-    }
+    // synchronized(objectLock) { 
+    //   element.delete();
+    // }
   }
 
   /**
