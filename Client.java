@@ -6,6 +6,7 @@ import java.io.File;
 import java.net.URL;     
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+import java.io.FileWriter;
 /**
  * A Java client to the online bookstore.
  */
@@ -152,7 +153,6 @@ public class Client {
    * @param Category The category being looked up
    */
   private static void lookupFile(String Category, String Filename){
-    System.out.println("STARTING LOOKUP");
     XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
     params.add(Category);
@@ -162,16 +162,25 @@ public class Client {
     System.out.println(Filename);
 
     try{
-      System.out.println("Executing");
-      Object result =  (Object) client.execute("FrontEnd.getItem", params.toArray());
-      result = (String) result;
-      System.out.println("SUCCESS");
-      if(result != null){
-        System.out.println("WE HAVE RESULT");
+      String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
+
+      //Makes a file object using the given name
+      File recievedFile = new File(Filename);
+
+      //If an outdated version exists, delete it
+      if(recievedFile.exists()){
+        recievedFile.delete();
       }
-      else{
-        System.out.println("Could not get data");
-      }
+
+      //Create the File
+      recievedFile.createNewFile();
+
+      //Write the contents to the file
+      FileWriter fileWriter = new FileWriter(Filename);
+      fileWriter.write(fileContents);
+      fileWriter.close();
+
+      System.out.println("Successfully retrieved: " + Filename);
     }
     catch(Exception e){
       System.err.println("Client exception: " + e);
