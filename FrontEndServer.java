@@ -78,8 +78,8 @@ public class FrontEndServer {
     // hopefully it's uniform enough that it doesn't overload the system
     // Should this server be unavailable during repartitions? yes? --> ask barker 
     for (String category: categories) {
-      int oldHash = hash(category, databases.size() - 1);
-      int newHash = hash(category, databases.size());
+      int oldHash = hash(category, databases.size() - 1)[0];
+      int newHash = hash(category, databases.size())[0];
       if (oldHash != newHash) {
         // DO RPC call for the old machine to send data to the new machine
         // and delete its key
@@ -92,12 +92,13 @@ public class FrontEndServer {
   }
 
   // hash function, is send string to hash ---> hash sends out 
-  public int hash(String category, int numMachines){
+  public int[] hash(String category, int numMachines){
     // need a hash that spits out 2 numbers modded over the number of machines
-    int hash1 = hashCode();
-    // second hash for two machines
-    // int hash2 = hash1 + 1;
-    return hash1%numMachines;
+    int hash1 = category.hashCode();
+    int hash2 = hash1 + 1;
+    int[] hashes = {hash1%numMachines, hash2%numMachines};
+
+    return hashes;
   }
   
   
@@ -119,8 +120,13 @@ public class FrontEndServer {
   }
   
   public Boolean addItem(String category, String fileName, String contents, String leader){
+    if (databases.size() == 0){
+      // or a string saying add a database... ?
+      return false; 
+    }
+    
     System.out.println("Adding item...");
-    int index = hash(category, databases.size());
+    int index = hash(category, databases.size())[0];
     String database = databases.get(index);
     ArrayList<String> liveFrontEnds = new ArrayList<String>();
     System.out.println("This is the database chosen: " + database);
@@ -184,7 +190,7 @@ public class FrontEndServer {
    */
   public String getItem(String category, String fileName) {
     System.out.println("Size of database: " + databases.size());
-    int index = hash(category, databases.size());
+    int index = hash(category, databases.size())[0];
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<String>();
     params.add(category);
@@ -288,7 +294,7 @@ public class FrontEndServer {
 
   public String lookupCategory(String category){
     System.out.println("STARTING LOOKUP");
-    int index = hash(category, databases.size());
+    int index = hash(category, databases.size())[0];
     XmlRpcClient client = createClient(databases.get(index));
     List<String> params = new ArrayList<>();
     params.add(category);
