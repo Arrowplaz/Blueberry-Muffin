@@ -108,7 +108,7 @@ public class FrontEndServer {
     // need a hash that spits out 2 numbers modded over the number of machines
     System.out.println("Inside hash function");
     System.out.println("Category: " + category);
-    int hash1 = category.hashCode();
+    int hash1 = Math.abs(category.hashCode());
     System.out.println("result of first hash: " + hash1);
     int hash2 = hash1 + 1;
     System.out.println(hash1%numMachines + " " + hash2%numMachines);
