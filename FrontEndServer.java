@@ -50,6 +50,19 @@ public class FrontEndServer {
   }
 
   /**
+   * This method is a getter for the other front ends list
+   * Used by client to get frontends from the entrypoint
+   * 
+   * Is non inclusive of current frontend to prevent optimal front end 
+   * and entry point from being the same
+   * 
+   * @return the List of other frontends
+   */
+  public ArrayList<String> getFrontEnds(){
+    return otherFrontEnds;
+  }
+
+  /**
    * The helper method to create a client
    * 
    * @param hostName: hostname of the client
