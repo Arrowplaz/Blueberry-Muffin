@@ -122,15 +122,16 @@ public class DatabaseServer {
   public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
-    //If the category folder doesnt exist, make it
+
     synchronized(objectLock) {
+      
       if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
       !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
         File categoryDir = new File(filePath);
         categoryDir.mkdir();
       }
-      
-      try{
+
+    try{
         File newFile = new File(filePath + "/" + fileName);
         if(newFile.createNewFile()){
           FileWriter writer = new FileWriter(filePath + "/" + fileName);
@@ -146,7 +147,6 @@ public class DatabaseServer {
         System.out.println("Database Error: " + e);
         return false;
       }
-    }
   }
 
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
@@ -219,6 +219,7 @@ public class DatabaseServer {
     //   element.delete();
     // }
   }
+
 
   /**
    * The main method
