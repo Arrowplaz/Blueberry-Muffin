@@ -77,9 +77,12 @@ public class FrontEndServer {
     // hash with old values and send to different systems
     // hopefully it's uniform enough that it doesn't overload the system
     // Should this server be unavailable during repartitions? yes? --> ask barker 
-    for (String category: categories) {
+    for (int i = 0; i < categories.size(); i++) {
+      String category = categories.get(i);
+      System.out.println("Looking at new category: " + category);
       int oldHash = hash(category, databases.size() - 1)[0];
       int newHash = hash(category, databases.size())[0];
+
       if (oldHash != newHash) {
         try {
           XmlRpcClient client = createClient(databases.get(oldHash));
@@ -103,6 +106,7 @@ public class FrontEndServer {
   // hash function, is send string to hash ---> hash sends out 
   public int[] hash(String category, int numMachines){
     // need a hash that spits out 2 numbers modded over the number of machines
+    System.out.println("Inside hash function");
     int hash1 = category.hashCode();
     int hash2 = hash1 + 1;
     int[] hashes = {hash1%numMachines, hash2%numMachines};

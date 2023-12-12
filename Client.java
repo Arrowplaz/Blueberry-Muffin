@@ -263,7 +263,8 @@ public class Client {
         default:
           System.out.println("Invalid function name");
           System.out.println("Functions: lookup, addBook, addDatabase");
-          return;
+          System.out.println("Please try again");
+          // removed return here, we might want it back
       }
       }
       
