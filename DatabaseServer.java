@@ -59,7 +59,7 @@ public class DatabaseServer {
       client = new XmlRpcClient();
       client.setConfig(config);
     } catch (Exception e) {
-      System.err.println("Database Exception: " + e);
+      System.err.println("Client exception: " + e);
     }
     return client;
   }
@@ -184,10 +184,10 @@ public class DatabaseServer {
         params.add(fileContents);
 
         try {
-          Boolean result = (boolean) client.execute("Database.addItem", params);
+          client.execute("Database.addItem", params);
         }
         catch(Exception e){
-          System.out.println("Failed to send elements to other db: " + databaseIp);
+          System.out.println("Failed to send elements to other db: |" + databaseIp + "|");
           System.err.println("Client exception: " + e);
           return false;
         }
@@ -247,7 +247,7 @@ public class DatabaseServer {
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
-      WebServer server = new WebServer(8412);
+      WebServer server = new WebServer(PORTNUMBER);
       xmlRpcServer = server.getXmlRpcServer();
       phm.addHandler("Database", DatabaseServer.class);
       xmlRpcServer.setHandlerMapping(phm);
