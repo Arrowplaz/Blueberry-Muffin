@@ -109,6 +109,8 @@ public class Client {
    * @param outgoingFile The file itself
    */
   private static void addFile(String category, String outgoingFile){
+
+    //Opens the given file and reads the content
     String dataToBeSent = "";
     try{
       File file = new File(outgoingFile);
@@ -118,20 +120,19 @@ public class Client {
       }
     }
     catch(Exception e){
+      //If we couldnt read the file, stop the command
       System.out.println("Could not open and/or read Filepath: " + outgoingFile);
       return;
     }
 
-      System.out.println(category);
-      System.out.println(outgoingFile);
-      System.out.println(dataToBeSent);
+     
 
       XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<>();
-      params.add(category);
-      params.add(outgoingFile);
-      params.add(dataToBeSent);
-      params.add("YES");
+      params.add(category); //Category of the file
+      params.add(outgoingFile); //Name of the file
+      params.add(dataToBeSent); //Contents of the file
+      params.add(optimalFrontEnd); //The 'leader' frontEnd
 
       try{
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
@@ -158,12 +159,15 @@ public class Client {
     params.add(Category);
     params.add(Filename);
 
-    System.out.println(Category);
-    System.out.println(Filename);
+    // System.out.println(Category);
+    // System.out.println(Filename);
 
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
-
+      if(fileContents.length() == 0){
+        System.out.println("Unable to locate file: " + Filename);
+        return;
+      }
       //Makes a file object using the given name
       File recievedFile = new File(Filename);
 

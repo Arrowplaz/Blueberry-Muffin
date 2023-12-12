@@ -64,6 +64,13 @@ public class DatabaseServer {
     return client;
   }
 
+  /**
+   * A helper method to open a file and get its contents
+   * 
+   * @param filePath the file being opened
+   * 
+   * @return the contents as a string
+   */
   private String getFileContents(String filePath) {
     try{
       String fileContents = "";
