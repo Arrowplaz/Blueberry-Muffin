@@ -243,9 +243,6 @@ public class FrontEndServer {
     } 
   }
 
-  public List<String> getFrontEnds(){
-    return otherFrontEnds;
-  }
 
   public Boolean addFrontEnd(String ipAddress) {
     // failure case: when the ipAddress already exists?
