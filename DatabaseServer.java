@@ -20,6 +20,7 @@ import java.util.Scanner;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 /**
  * The class for the databases being used in the Giant Scale Service
  * Besides containing all our data, has the ability to send and recieve data to and from 
@@ -57,7 +58,7 @@ public class DatabaseServer {
       client = new XmlRpcClient();
       client.setConfig(config);
     } catch (Exception e) {
-      System.err.println("Client exception: " + e);
+      System.err.println("Database Exception: " + e);
     }
     return client;
   }
@@ -175,7 +176,7 @@ public class DatabaseServer {
       return true;
     }
     catch(Exception e){
-      System.err.println("Client exception: " + e);
+      System.err.println("Database Exception: " + e);
       return false;
     }
   }
@@ -206,11 +207,32 @@ public class DatabaseServer {
   }
 
   /**
+   * A helper method to clean any previous database contents from previous runs
+   * 
+   * @param element The path of the database folder, recurses on everything inside the folder
+   */
+  public static void deleteFile(File element) {
+    if(element.isDirectory()){
+      String[] files = element.list();
+      if(files.length != 0){
+        for(String file: files){
+          File subFile = new File(element.toString() + "/" + file);
+          deleteFile(subFile);
+        }
+      }
+    }
+    element.delete();
+  }
+
+  /**
    * The main method
    */
   public static void main(String[] args) {
     workingDir = Paths.get("").toAbsolutePath().toString();
     File Database = new File(workingDir + "/Database");
+
+    deleteFile(Database);
+
     Database.mkdir();
     
     if (args.length != 2) {
@@ -223,6 +245,7 @@ public class DatabaseServer {
     }
     else {
       System.out.println("Database addition went wrong for some reason");
+      return;
     }
 
     
