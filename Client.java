@@ -159,7 +159,7 @@ public class Client {
    * Prints the results in the console
    * @param Category The category being looked up
    */
-  private static void lookupCategory(String Category, String Filename){
+  private static void lookupFile(String Category, String Filename){
     System.out.println("STARTING LOOKUP");
     XmlRpcClient client = createClient();
     List<String> params = new ArrayList<>();
@@ -242,12 +242,15 @@ public class Client {
       else{
           switch(cmdLineParse[0]){
         case "lookup":
-          lookupCategory(cmdLineParse[1], cmdLineParse[2]);
+          if(cmdLineParse.length != 3){
+            System.out.println("lookup Usage: [Category] [Filename]");
+          }
+          lookupFile(cmdLineParse[1], cmdLineParse[2]);
           break;
 
         case "addFile":
           if(cmdLineParse.length != 3){
-            System.out.println("addBook Usage: [Category] [File]");
+            System.out.println("addFile Usage: [Category] [File]");
             break;
           }
           addFile(cmdLineParse[1], cmdLineParse[2]);
