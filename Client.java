@@ -40,19 +40,19 @@ public class Client {
    */
   private static void regionSmartSelect(){
     //Create a client to the entry point
+    System.out.println("STARTING SMART SELECT");
     XmlRpcClient entryClient = createClient(entryPoint);
     List<String> params = new ArrayList<>();
 
 
     //Retrieve the list of all frontends
-    ArrayList<String> frontEnds;
+    Object[] frontEnds;
     try{
-      Object result = (Object) entryClient.execute("FrontEnd.getFrontEnd", params);
-      
-      frontEnds = (ArrayList<String>) result;
+      frontEnds = (Object[]) entryClient.execute("FrontEnd.getFrontEnds", params);
     }
     catch(Exception e){
       System.out.println("Could not get Frontends from entry point, ensure entry point is online");
+      System.out.println(e);
       return;
     }
 
@@ -61,8 +61,8 @@ public class Client {
     Long bestTime = Long.MAX_VALUE;
 
     //Iterate over all frontends
-    for(String frontEnd: frontEnds){
-      XmlRpcClient FEClient = createClient(frontEnd);
+    for(Object frontEnd: frontEnds){
+      XmlRpcClient FEClient = createClient(frontEnd.toString());
       try{
         //Start Time
         long startTime = System.nanoTime();
@@ -70,23 +70,15 @@ public class Client {
         long endTime = System.nanoTime() - startTime;
         if(endTime < bestTime){ //Compare total time to best
           bestTime = endTime;
-          bestFrontEnd = frontEnd;
+          bestFrontEnd = frontEnd.toString();
         }
       }
       catch(Exception e){
         System.out.println("Could not ping Front end: " + frontEnd);
       }
     }
+    System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
     optimalFrontEnd = bestFrontEnd;
-  }
-
-  /**
-   * An overload method to create a client using the optimal IP found
-   * using our region checking
-   * @return The client created using the IP of the best Frontend
-   */
-  public static XmlRpcClient createClient(){
-    return createClient(entryPoint);
   }
 
   /**
@@ -133,7 +125,7 @@ public class Client {
       System.out.println(outgoingFile);
       System.out.println(dataToBeSent);
 
-      XmlRpcClient client = createClient();
+      XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<>();
       params.add(category);
       params.add(outgoingFile);
@@ -161,7 +153,7 @@ public class Client {
    */
   private static void lookupFile(String Category, String Filename){
     System.out.println("STARTING LOOKUP");
-    XmlRpcClient client = createClient();
+    XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
     params.add(Category);
     params.add(Filename);
@@ -227,7 +219,7 @@ public class Client {
     entryPoint = args[0];
     
     //Identify the best Frontend for this user
-    //regionSmartSelect();
+    regionSmartSelect();
 
     //Take in commands from the user
      while(true){
