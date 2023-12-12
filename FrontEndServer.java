@@ -35,7 +35,7 @@ public class FrontEndServer {
   // instead have a hashfunction with the number of databases
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFrontEnds = new ArrayList<>();
-  private static final int PORTNUMBER = 8412;
+  private static final int PORTNUMBER = 8413;
 
 
   /**

@@ -34,7 +34,7 @@ public class DatabaseServer {
    * The port number being used
    * Standardized across our project
    */
-  private static final int PORTNUMBER = 8412;
+  private static final int PORTNUMBER = 8413;
 
   /**
    * The location of the database's working directory
@@ -98,10 +98,10 @@ public class DatabaseServer {
    * @return the contents of a file as a String
    */
   public String getItem(String category, String fileName) {
-    System.out.println("GETTING ITEM");
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
-    if(Files.exists(Paths.get(filePath))){
-      // i can see this causing problems... possibly
+
+    File file = new File(filePath);
+    if(file.isFile()){
       return getFileContents(filePath);
     }
     else{
@@ -129,15 +129,16 @@ public class DatabaseServer {
   public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
-    //If the category folder doesnt exist, make it
+
     synchronized(objectLock) {
+      
       if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
       !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
         File categoryDir = new File(filePath);
         categoryDir.mkdir();
       }
-      
-      try{
+
+    try{
         File newFile = new File(filePath + "/" + fileName);
         if(newFile.createNewFile()){
           FileWriter writer = new FileWriter(filePath + "/" + fileName);
@@ -173,7 +174,6 @@ public class DatabaseServer {
 
 
   public boolean sendCategory(String databaseIp, String category){
-    final int PORTNUMBER = 8412;
     String categoryPath = workingDir + "/Database/" + category;
     
     if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
@@ -222,10 +222,11 @@ public class DatabaseServer {
         }
       }
     }
-    synchronized(objectLock) { 
-      element.delete();
-    }
+    // synchronized(objectLock) { 
+    //   element.delete();
+    // }
   }
+
 
   /**
    * The main method
