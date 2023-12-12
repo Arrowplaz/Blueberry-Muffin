@@ -34,7 +34,7 @@ public class DatabaseServer {
    * The port number being used
    * Standardized across our project
    */
-  private static final int PORTNUMBER = 8412;
+  private static final int PORTNUMBER = 8413;
 
   /**
    * The location of the database's working directory
@@ -149,7 +149,7 @@ public class DatabaseServer {
       }
     }
   }
-  
+
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
     XmlRpcClient client = createClient(entryPoint);
     List<String> params = new ArrayList<String>();
@@ -167,7 +167,6 @@ public class DatabaseServer {
 
 
   public boolean sendCategory(String databaseIp, String category){
-    final int PORTNUMBER = 8412;
     String categoryPath = workingDir + "/Database/" + category;
     
     if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
