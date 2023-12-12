@@ -147,8 +147,9 @@ public class DatabaseServer {
         System.out.println("Database Error: " + e);
         return false;
       }
+    }
   }
-
+  
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
     XmlRpcClient client = createClient(entryPoint);
     List<String> params = new ArrayList<String>();
