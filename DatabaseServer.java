@@ -28,7 +28,7 @@ import java.nio.file.Paths;
  */
 public class DatabaseServer { 
 
- private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
+//  private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
   
   /**
    * The port number being used
@@ -42,6 +42,7 @@ public class DatabaseServer {
    */
   private static String workingDir;
 
+  private static Object objectLock; 
     /**
    * The helper method to create a client
    * 
@@ -63,30 +64,23 @@ public class DatabaseServer {
     return client;
   }
 
-
-  // /**
-  //  * A getter method to determine which categories (keys) this database contains
-  //  * @return
-  //  */
-  // public static Set<String> getCategories(){
-  //   System.out.println("Getting categories from Database");
-  //   return database.keySet();
-  // }
-  
-  // /**
-  //  * 
-  //  * @param genre
-  //  * @return
-  //  */
-  // public ArrayList<Book> getCategory(String genre){
-  //   if(database.keySet().contains(genre)){
-  //     System.out.println("Successfully got, category!");
-  //     return database.get(genre);
-  //   }
-  //   System.out.println("");
-
-  //   else return null;
-  // }
+  private String getFileContents(String filePath) {
+    try{
+      String fileContents = "";
+      File currFile = new File(filePath);
+      Scanner fileReader = new Scanner(currFile);
+      while(fileReader.hasNextLine()){
+        fileContents += fileReader.nextLine();
+        fileContents += "\n";
+      }
+      fileReader.close();
+      return fileContents; 
+    }
+    catch(Exception e){
+      System.out.println("Database Error: " + e);
+      return "";
+    }
+  }
 
   /**
    * Using a category and fileName, converts the file to a string for sendin
@@ -99,22 +93,9 @@ public class DatabaseServer {
   public String getItem(String category, String fileName) {
     System.out.println("GETTING ITEM");
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
-    if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
-      try{
-        String fileContents = "";
-        File currFile = new File(filePath);
-        Scanner fileReader = new Scanner(currFile);
-        while(fileReader.hasNextLine()){
-          fileContents += fileReader.nextLine();
-          fileContents += "\n";
-        }
-        fileReader.close();
-        return fileContents; 
-      }
-      catch(Exception e){
-        System.out.println("Database Error: " + e);
-        return "";
-      }
+    if(Files.exists(Paths.get(filePath))){
+      // i can see this causing problems... possibly
+      return getFileContents(filePath);
     }
     else{
       return "";
@@ -123,7 +104,7 @@ public class DatabaseServer {
 
   public boolean deleteFile(String category, String fileName){
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
-    if(Files.exists(Paths.get(workingDir + "/Database/" + category + "/" + fileName))){
+    if(Files.exists(Paths.get(workingDir))){
       File currFile = new File(filePath);
       if(currFile.delete()){
         return true;
@@ -142,27 +123,29 @@ public class DatabaseServer {
     String filePath = workingDir + "/Database/" + category;
 
     //If the category folder doesnt exist, make it
-    if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
-    !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
-      File categoryDir = new File(filePath);
-      categoryDir.mkdir();
-    }
-
-    try{
-      File newFile = new File(filePath + "/" + fileName);
-      if(newFile.createNewFile()){
-        FileWriter writer = new FileWriter(filePath + "/" + fileName);
-        writer.write(contents);
-        writer.close();
-        return true;
+    synchronized(objectLock) {
+      if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
+      !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
+        File categoryDir = new File(filePath);
+        categoryDir.mkdir();
       }
-      else{
-        //File already exists
+      
+      try{
+        File newFile = new File(filePath + "/" + fileName);
+        if(newFile.createNewFile()){
+          FileWriter writer = new FileWriter(filePath + "/" + fileName);
+          writer.write(contents);
+          writer.close();
+          return true;
+        }
+        else{
+          //File already exists
+          return false;
+        }
+      }catch(Exception e){
+        System.out.println("Database Error: " + e);
         return false;
       }
-    }catch(Exception e){
-      System.out.println("Database Error: " + e);
-      return false;
     }
   }
 
@@ -184,44 +167,57 @@ public class DatabaseServer {
 
   public boolean sendCategory(String databaseIp, String category){
     final int PORTNUMBER = 8412;
-    //Create client
-    //Send over data
-    //Recieve either a success or failure
-    for (String fileName : database.get(category)) {
-      XmlRpcClient client = createClient(databaseIp);
-      List<String> params = new ArrayList<>();
-      params.add(category);
-      params.add(fileName);
-      // change this to contents after
-      params.add(fileName);
-      try {
-        Boolean result = (boolean) client.execute("Database.addItem", params.toArray());
+    String categoryPath = workingDir + "/Database/" + category;
+    
+    if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
+      File categoryFile = new File(categoryPath);
+      String[] files = categoryFile.list();
+      for (String file: files) {
+        // get the file path and send it over to getfile contents,
+        String fileContents = getFileContents(categoryPath + "/" + file);
+        System.out.println("Here are the file contents: " + fileContents);
+        XmlRpcClient client = createClient(databaseIp);
+        List<String> params = new ArrayList<String>();
+        params.add(category);
+        params.add(file);
+        // change this to contents after
+        params.add(fileContents);
+
+        try {
+          Boolean result = (boolean) client.execute("Database.addItem", params);
+        }
+        catch(Exception e){
+          System.out.println("Failed to send elements to other db: " + databaseIp);
+          System.err.println("Client exception: " + e);
+          return false;
+        }
       }
-      catch(Exception e){
-        System.err.println("Client exception: " + e);
-        return false;
-      }
+      // delete an entire folder after all has been sent
+      deleteFolder(categoryFile);
     }
-    // delete an entire folder after all has been sent
+
     return true; 
   }
 
   /**
-   * A helper method to clean any previous database contents from previous runs
+   * A helper method to clean a database
    * 
-   * @param element The path of the database folder, recurses on everything inside the folder
+   * @param element The File object of a chosen directory (can either be a category or 
+   *                the whole database)
    */
-  public static void deleteFile(File element) {
+  public static void deleteFolder(File element) {
     if(element.isDirectory()){
       String[] files = element.list();
       if(files.length != 0){
         for(String file: files){
           File subFile = new File(element.toString() + "/" + file);
-          deleteFile(subFile);
+          deleteFolder(subFile);
         }
       }
     }
-    element.delete();
+    synchronized(objectLock) { 
+      element.delete();
+    }
   }
 
   /**
@@ -231,7 +227,7 @@ public class DatabaseServer {
     workingDir = Paths.get("").toAbsolutePath().toString();
     File Database = new File(workingDir + "/Database");
 
-    deleteFile(Database);
+    deleteFolder(Database);
 
     Database.mkdir();
     
@@ -247,8 +243,6 @@ public class DatabaseServer {
       System.out.println("Database addition went wrong for some reason");
       return;
     }
-
-    
 
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();

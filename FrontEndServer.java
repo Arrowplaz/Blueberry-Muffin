@@ -81,11 +81,20 @@ public class FrontEndServer {
       int oldHash = hash(category, databases.size() - 1)[0];
       int newHash = hash(category, databases.size())[0];
       if (oldHash != newHash) {
-        // DO RPC call for the old machine to send data to the new machine
-        // and delete its key
-        System.out.println(category + " remapped from " + Integer.toString(oldHash) + " to " 
-        + Integer.toString(newHash));
-        System.out.println("Find it there from now on!");
+        try {
+          XmlRpcClient client = createClient(databases.get(oldHash));
+          List<String> params = new ArrayList<String>();
+          // databaseIp and category
+          params.add(databases.get(newHash));
+          params.add(category);
+          client.execute("Database.sendCategory", params);
+          System.out.println(category + " remapped from " + Integer.toString(oldHash) + " to " 
+          + Integer.toString(newHash));
+          System.out.println("Find it there from now on!");
+        }
+        catch(Exception e) {
+          System.out.println("(FronEnd, repartition) Client exception" + e);
+        }
       }
     }
     return;
@@ -124,7 +133,7 @@ public class FrontEndServer {
       // or a string saying add a database... ?
       return false; 
     }
-    
+
     System.out.println("Adding item...");
     int index = hash(category, databases.size())[0];
     String database = databases.get(index);
@@ -142,6 +151,7 @@ public class FrontEndServer {
     try {
       // think about returns here
       client.execute("Database.addItem", params);
+      categories.add(category);
     } catch (Exception e) {
       System.out.println("Database unaccessible: " + e);
       System.out.println("removing database " + database);
