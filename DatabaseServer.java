@@ -239,14 +239,6 @@ public class DatabaseServer {
       return;
     }
 
-    if (joinDatabase(args[0], args[1])) {
-      System.out.println("Successfully joined front-end with entry point: " + args[1]);
-    }
-    else {
-      System.out.println("Database addition went wrong for some reason");
-      return;
-    }
-
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
@@ -259,6 +251,15 @@ public class DatabaseServer {
       
     } catch (Exception e) {
       System.err.println("Server exception: " + e);
+    }
+    
+
+    if (joinDatabase(args[0], args[1])) {
+      System.out.println("Successfully joined front-end with entry point: " + args[1]);
+    }
+    else {
+      System.out.println("Database addition went wrong for some reason");
+      return;
     }
   }
 }
