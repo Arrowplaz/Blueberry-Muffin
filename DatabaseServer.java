@@ -196,6 +196,10 @@ public class DatabaseServer {
       // delete an entire folder after all has been sent
       deleteFolder(categoryFile);
     }
+    else{
+      //DB doesnt have cat specified
+      return false;
+    }
 
     return true; 
   }
