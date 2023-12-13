@@ -143,6 +143,11 @@ public class Client {
       return;
     }
 
+    if(dataToBeSent.length() == 0){
+      System.out.println("Specified File has no contents. Aborting");
+      return;
+    }
+
 
       XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<>();
@@ -189,6 +194,10 @@ public class Client {
 
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
+      if(fileContents.length() == 0){
+        System.out.println("Unable to locate file: " + Filename);
+        return;
+      }
 
       //Makes a file object using the given name
       File recievedFile = new File(Filename);
