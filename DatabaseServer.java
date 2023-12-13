@@ -234,6 +234,14 @@ public class DatabaseServer {
         //Is inconsequential to delete something that doesnt exist however
         toBeDeleted.delete();
         }
+      
+      File categoryFile = new File(categoryPath);
+      if(categoryFile.list() == 0){
+        synchronized(objectLock){
+          categoryFile.delete();
+        }
+      }
+      
       return true;
     }
     else{
