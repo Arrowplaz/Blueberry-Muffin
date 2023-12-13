@@ -42,7 +42,7 @@ public class DatabaseServer {
    */
   private static String workingDir;
 
-  private static Object objectLock; 
+  private static Object objectLock = new Object();
     /**
    * The helper method to create a client
    * 
@@ -52,6 +52,7 @@ public class DatabaseServer {
    * @return the client
    */
   public static XmlRpcClient createClient(String ip) {
+    System.out.println("http://" + ip + ":" + PORTNUMBER);
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
@@ -121,34 +122,33 @@ public class DatabaseServer {
 
   public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
-    System.out.println(filePath);
-    return true;
 
-    // synchronized(objectLock) {
+
+    synchronized(objectLock) {
       
-    //   if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
-    //   !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
-    //     File categoryDir = new File(filePath);
-    //     categoryDir.mkdir();
-    //   }
+      if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
+      !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
+        File categoryDir = new File(filePath);
+        categoryDir.mkdir();
+      }
 
-    // try{
-    //     File newFile = new File(filePath + "/" + fileName);
-    //     if(newFile.createNewFile()){
-    //       FileWriter writer = new FileWriter(filePath + "/" + fileName);
-    //       writer.write(contents);
-    //       writer.close();
-    //       return true;
-    //     }
-    //     else{
-    //       //File already exists
-    //       return false;
-    //     }
-    //   }catch(Exception e){
-    //     System.out.println("Database Error: " + e);
-    //     return false;
-    //   }
-    // }
+    try{
+        File newFile = new File(filePath + "/" + fileName);
+        if(newFile.createNewFile()){
+          FileWriter writer = new FileWriter(filePath + "/" + fileName);
+          writer.write(contents);
+          writer.close();
+          return true;
+        }
+        else{
+          //File already exists
+          return false;
+        }
+      }catch(Exception e){
+        System.out.println("Database Error: " + e);
+        return false;
+      }
+    }
   }
 
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
