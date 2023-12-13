@@ -220,9 +220,9 @@ public class DatabaseServer {
         }
       }
     }
-    // synchronized(objectLock) { 
-    //   element.delete();
-    // }
+    synchronized(objectLock) { 
+      element.delete();
+    }
   }
 
   
