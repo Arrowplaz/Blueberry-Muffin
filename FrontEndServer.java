@@ -148,6 +148,40 @@ public class FrontEndServer {
     System.out.println("Successfully added!");
     return true;
   }
+
+  public boolean deleteItem(String category, String fileName, String leader){
+    if (databases.size() == 0){
+      // or a string saying add a database... ?
+      return false; 
+    }
+
+    System.out.println("Deleting item...");
+    int index = hash(category, databases.size())[0];
+    String database = databases.get(index);
+    ArrayList<String> liveFrontEnds = new ArrayList<String>();
+    System.out.println("This is the database chosen: " + database);
+    List<String> deadFrontEnds = new ArrayList<String>();
+
+    XmlRpcClient client = createClient(database);
+    List<String> params = new ArrayList<String>();
+    params.add(category);
+    params.add(fileName);
+
+    // in addition to this, send requests to all other frontEnds
+    try {
+      // think about returns here
+      client.execute("Database.deleteItem", params.toArray());
+      return true;
+    } catch (Exception e) {
+      System.out.println("Database unaccessible: " + e);
+      System.out.println("removing database " + database);
+      synchronized (databases) {
+        databases.remove(database);
+      }
+      System.out.println("New size of databases list " + databases.size());
+      return false;
+    }
+  }
   
   public Boolean addItem(String category, String fileName, String contents, String leader){
     if (databases.size() == 0){
