@@ -221,7 +221,7 @@ public class DatabaseServer {
    * 
    * @return true or false is successful or not
    */
-  public boolean deleteItem(String category, String fileName){
+  public String deleteItem(String category, String fileName){
     System.out.println("DELETING FILE");
     String categoryPath = workingDir + "/Database/" + category;
 
@@ -229,23 +229,24 @@ public class DatabaseServer {
     if(Files.isDirectory(Paths.get(categoryPath))){ //Or this
       File toBeDeleted = new File(categoryPath + "/" + fileName);
       Path filePath = toBeDeleted.toPath();
-      if(!Files.isRegularFile(filePath)) return false; //This is not working
+      if(!Files.isRegularFile(filePath)) return "false"; //This is not working
       synchronized(objectLock) { 
         //Is inconsequential to delete something that doesnt exist however
         toBeDeleted.delete();
         }
       
       File categoryFile = new File(categoryPath);
-      if(categoryFile.list() == 0){
+      if(categoryFile.list().length == 0){
         synchronized(objectLock){
           categoryFile.delete();
         }
+        return "delete";
       }
       
-      return true;
+      return "true";
     }
     else{
-      return false;
+      return "false";
     }
   }
 
