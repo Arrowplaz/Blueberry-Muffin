@@ -34,6 +34,12 @@ public class Client {
    */
   private static String optimalFrontEnd = null;
 
+  /**
+   * The IP address of the 2nd optimal front end
+   * as defined by our region smart selection
+   */
+  private static String secondOptimalFrontEnd = null;
+
 
   /**
    * The region smart selection to choose the Frontend
@@ -57,9 +63,11 @@ public class Client {
       return;
     }
 
-    //Keep track of the frontend with the best latency
+    //Keep track of the 2 frontend with the best latency
     String bestFrontEnd = "";
+    String secondBestFrontEnd = "";
     Long bestTime = Long.MAX_VALUE;
+    Long secondBestTime = Long.MAX_VALUE;
 
     //Iterate over all frontends
     for(Object frontEnd: frontEnds){
@@ -70,16 +78,29 @@ public class Client {
         String result = (String) entryClient.execute("FrontEnd.ping", params);
         long endTime = System.nanoTime() - startTime;
         if(endTime < bestTime){ //Compare total time to best
+          //Make the current best the new second best
+          secondBestFrontEnd = bestFrontEnd;
+          secondBestTime = bestTime;
+
+          //Store the best
           bestTime = endTime;
           bestFrontEnd = frontEnd.toString();
         }
+
+        else if(endTime < secondBestTime){
+          //Just replace the second best
+          secondBestTime = endTime;
+          secondBestFrontEnd = frontEnd.toString();
+        }
       }
       catch(Exception e){
-        System.out.println("Could not ping Front end: " + frontEnd);
+        System.out.println("Could not ping Front End: " + frontEnd);
       }
     }
     System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
+    System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
     optimalFrontEnd = bestFrontEnd;
+    secondOptimalFrontEnd = secondBestFrontEnd;
   }
 
   /**
@@ -122,9 +143,6 @@ public class Client {
       return;
     }
 
-      System.out.println(category);
-      System.out.println(outgoingFile);
-      System.out.println(dataToBeSent);
 
       XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<>();
@@ -136,14 +154,22 @@ public class Client {
       try{
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
         if(result){
-          System.out.println("File: " + outgoingFile + " was Sucessfully added to"); 
+          System.out.println("File: " + outgoingFile + " was Sucessfully added to System"); 
         }
         else{
           System.out.println("Failed to add");
         }
       }
       catch(Exception e){
-        System.err.println("Client exception: " + e);
+        if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+          System.err.println("Client exception: " + e);
+          return;
+        }
+        else{
+          optimalFrontEnd = secondOptimalFrontEnd;
+          secondOptimalFrontEnd = null;
+          addFile(category, outgoingFile);
+        }
       }
     }
 
@@ -183,36 +209,19 @@ public class Client {
       System.out.println("Successfully retrieved: " + Filename);
     }
     catch(Exception e){
-      System.err.println("Client exception: " + e);
+      if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+          System.err.println("Client exception: " + e);
+          return;
+        }
+        else{
+          optimalFrontEnd = secondOptimalFrontEnd;
+          secondOptimalFrontEnd = null;
+          System.out.println("CHANGING FRONTEND");
+          lookupFile(Category, Filename);
+        }
     }
   }
 
-  /**
-   * A "Admin" method that will add a database to a specifc region
-   * 
-   * @param frontendIP the IP of the frontend for the region we are adding the DB to
-   * @param databaseIP the IP of the database being added
-   */
-  private static void addDatabase(String frontendIP, String databaseIP){
-    XmlRpcClient client = createClient(frontendIP);
-    List<String> params = new ArrayList<>();
-    params.add(databaseIP);
-    
-    try{
-      Boolean result = (Boolean) client.execute("FrontEnd.addDatabase", params.toArray());
-      if(result){
-        System.out.println("Database was successfully added to region: " + frontendIP );
-      }
-      else{
-        System.out.println("Failed to add Database");
-      }
-    }
-    catch(Exception e){
-      System.err.println("Client exception: " + e);
-    }
-  }
-
-  
   /**
    * The main method
    * @param args
@@ -257,16 +266,10 @@ public class Client {
           addFile(cmdLineParse[1], cmdLineParse[2]);
           break;
         
-        case "addDatabase":
-          if(cmdLineParse.length != 3){
-            System.out.println("addDatabase Usage: [Frontend IP] [Database IP]");
-          }
-          addDatabase(cmdLineParse[1], cmdLineParse[2]);
-          break;
 
         default:
           System.out.println("Invalid function name");
-          System.out.println("Functions: lookup, addBook, addDatabase");
+          System.out.println("Functions: lookup, addFile");
           System.out.println("Please try again");
           // removed return here, we might want it back
       }
