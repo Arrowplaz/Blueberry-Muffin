@@ -311,7 +311,7 @@ public class Client {
             System.out.println("deleteFile Usage: [Category] [File]");
             break;
           }
-          addFile(cmdLineParse[1], cmdLineParse[2]);
+          deleteFile(cmdLineParse[1], cmdLineParse[2]);
           break;
 
         default:
