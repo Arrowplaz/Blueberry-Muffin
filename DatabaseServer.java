@@ -42,7 +42,7 @@ public class DatabaseServer {
    */
   private static String workingDir;
 
-  private static Object objectLock; 
+  private static Object objectLock = new Object();
     /**
    * The helper method to create a client
    * 
@@ -52,6 +52,7 @@ public class DatabaseServer {
    * @return the client
    */
   public static XmlRpcClient createClient(String ip) {
+    System.out.println("http://" + ip + ":" + PORTNUMBER);
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
@@ -202,8 +203,36 @@ public class DatabaseServer {
       // delete an entire folder after all has been sent
       deleteFolder(categoryFile);
     }
+    else{
+      //DB doesnt have cat specified
+      return false;
+    }
 
     return true; 
+  }
+
+  /**
+   * A method to delete an item from the database
+   * 
+   * @param category the category of the file being deleted
+   * @param fileName the file's name
+   * 
+   * @return true or false is successful or not
+   */
+  public boolean deleteItem(String category, String fileName){
+    String categoryPath = workingDir + "/Database/" + category;
+
+    //Checks to see if the Cat is a dir
+    if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
+      File toBeDeleted = new File(categoryPath + "/" + fileName);
+      synchronized(objectLock) { 
+        toBeDeleted.delete();
+        }
+      return true;
+    }
+    else{
+      return false;
+    }
   }
 
   /**
@@ -222,11 +251,12 @@ public class DatabaseServer {
         }
       }
     }
-    // synchronized(objectLock) { 
-    //   element.delete();
-    // }
+    synchronized(objectLock) { 
+      element.delete();
+    }
   }
 
+  
 
   /**
    * The main method
@@ -244,14 +274,6 @@ public class DatabaseServer {
       return;
     }
 
-    if (joinDatabase(args[0], args[1])) {
-      System.out.println("Successfully joined front-end with entry point: " + args[1]);
-    }
-    else {
-      System.out.println("Database addition went wrong for some reason");
-      return;
-    }
-
     try {
       PropertyHandlerMapping phm = new PropertyHandlerMapping();
       XmlRpcServer xmlRpcServer;
@@ -264,6 +286,15 @@ public class DatabaseServer {
       
     } catch (Exception e) {
       System.err.println("Server exception: " + e);
+    }
+    
+
+    if (joinDatabase(args[0], args[1])) {
+      System.out.println("Successfully joined front-end with entry point: " + args[1]);
+    }
+    else {
+      System.out.println("Database addition went wrong for some reason");
+      return;
     }
   }
 }

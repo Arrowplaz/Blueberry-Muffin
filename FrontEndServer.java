@@ -148,6 +148,71 @@ public class FrontEndServer {
     System.out.println("Successfully added!");
     return true;
   }
+
+  public boolean deleteItem(String category, String fileName, String leader){
+    if (databases.size() == 0){
+      // or a string saying add a database... ?
+      return false; 
+    }
+
+    System.out.println("Deleting item...");
+    int index = hash(category, databases.size())[0];
+    String database = databases.get(index);
+    ArrayList<String> liveFrontEnds = new ArrayList<String>();
+    System.out.println("This is the database chosen: " + database);
+    List<String> deadFrontEnds = new ArrayList<String>();
+
+    XmlRpcClient client = createClient(database);
+    List<String> params = new ArrayList<String>();
+    params.add(category);
+    params.add(fileName);
+
+    // in addition to this, send requests to all other frontEnds
+    try {
+      // think about returns here
+      client.execute("Database.deleteItem", params.toArray());
+    } catch (Exception e) {
+      System.out.println("Database unaccessible: " + e);
+      System.out.println("removing database " + database);
+      synchronized (databases) {
+        databases.remove(database);
+      }
+      System.out.println("New size of databases list " + databases.size());
+      return false;
+    }
+
+    if (leader.equals("NO")) {
+      System.out.println("Not coordinator, not deleting from other FrontEnds...");
+      return true;
+    }
+
+    System.out.println("About to delete items from other FrontEnds");
+    System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
+    //leading to concurrency modication errors, so placing synchronized
+    // synchronized(otherFrontEnds) {
+    params.add("NO");
+    for (int i = 0; i < otherFrontEnds.size(); i ++) {
+      String frontEndIp = otherFrontEnds.get(i);
+      System.out.println("Deleting item from FE: + " + frontEndIp);
+      try {
+        XmlRpcClient frontEndClient = createClient(frontEndIp);
+        // use the same params
+        frontEndClient.execute("FrontEnd.deleteItem", params);
+        liveFrontEnds.add(frontEndIp);
+        System.out.println("successfully deleted from frontEnd above");
+      } catch (Exception e) {
+        System.out.println("failed to addItem to " + frontEndIp);
+        System.out.println("(FrontEnd, deleteItem) " + e);
+      }
+    }
+    // update the value of otherFrontEnds to only include live 
+    // front ends
+    synchronized(otherFrontEnds) {
+      otherFrontEnds = new ArrayList<String>(liveFrontEnds);
+    }
+    System.out.println("number of alive frontEnds " + otherFrontEnds.size());
+    return true;
+  }
   
   public Boolean addItem(String category, String fileName, String contents, String leader){
     if (databases.size() == 0){
