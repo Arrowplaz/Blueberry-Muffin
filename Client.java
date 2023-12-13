@@ -231,6 +231,37 @@ public class Client {
     }
   }
 
+
+  private static void deleteFile(String category, String fileName){
+      XmlRpcClient client = createClient(optimalFrontEnd);
+      List<String> params = new ArrayList<>();
+      params.add(category);
+      params.add(fileName);
+      params.add("YES");
+
+      try{
+        Boolean result = (Boolean) client.execute("FrontEnd.deleteItem", params.toArray());
+        if(result){
+          System.out.println("File: " + fileName + " was Sucessfully deleted from System"); 
+        }
+        else{
+          System.out.println("Failed to add");
+        }
+      }
+      catch(Exception e){
+        if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+          System.err.println("Client exception: " + e);
+          return;
+        }
+        else{
+          optimalFrontEnd = secondOptimalFrontEnd;
+          secondOptimalFrontEnd = null;
+          deleteFile(category, fileName);
+        }
+      }
+  }
+
+
   /**
    * The main method
    * @param args
@@ -275,10 +306,17 @@ public class Client {
           addFile(cmdLineParse[1], cmdLineParse[2]);
           break;
         
+        case "deleteFile":
+          if(cmdLineParse.length != 3){
+            System.out.println("deleteFile Usage: [Category] [File]");
+            break;
+          }
+          addFile(cmdLineParse[1], cmdLineParse[2]);
+          break;
 
         default:
           System.out.println("Invalid function name");
-          System.out.println("Functions: lookup, addFile");
+          System.out.println("Functions: lookup, addFile, deleteFile");
           System.out.println("Please try again");
           // removed return here, we might want it back
       }

@@ -205,6 +205,30 @@ public class DatabaseServer {
   }
 
   /**
+   * A method to delete an item from the database
+   * 
+   * @param category the category of the file being deleted
+   * @param fileName the file's name
+   * 
+   * @return true or false is successful or not
+   */
+  public boolean deleteItem(String category, String fileName){
+    String categoryPath = workingDir + "/Database/" + category;
+
+    //Checks to see if the Cat is a dir
+    if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
+      File toBeDeleted = new File(categoryPath + "/" + fileName);
+      synchronized(objectLock) { 
+        toBeDeleted.delete();
+        }
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
+  /**
    * A helper method to clean a database
    * 
    * @param element The File object of a chosen directory (can either be a category or 
