@@ -139,53 +139,64 @@ public class FrontEndServer {
       int[] prevHashes = hash(category, databases.size());
       int[] newHashes = hash(category, databases.size() - hashesToRemove.length);
       System.out.println("Looking at this cateogry: " + category);
-      System.out.println(prevHashes.toString());
-      System.out.println(newHashes.toString());
+      System.out.println("(" + prevHashes[0] + ", " + prevHashes[1] +")");
+      System.out.println("(" + newHashes[0] + ", " + newHashes[1] +")");
+      //(0, 2) --> (0, 0))
+      System.out.println("Hashes remove: " + "(" + hashesToRemove[0] + ", " + hashesToRemove[1] +")");
+      //(0, 1) removed
+
       //(1, 2) where 
-      // if this category still exists in the current databases
-      if (!prevHashes.equals(hashesToRemove)) {
-        // the category exists on at least one machine
-        liveCategories.add(category);
-        System.out.println("category still in system: " + category);
-        // if the first machine is down
-        if(prevHashes[0] == hashesToRemove[0] || prevHashes[0] == hashesToRemove[1]) {
-          // second machine send categories to these new machines
-          // if the second machine is down, give up, can't take care of all failures
-          // only delete the category on your second send
-          if (prevHashes[1] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[0], category, "NO"); 
-          }
-          if (prevHashes[1] != newHashes[1]){         
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
-          }
-
+      // if this category doesn't exist in the databases
+      if (prevHashes[0] == hashesToRemove[0] && prevHashes[1] == hashesToRemove[1]) {
+        System.out.println("Literally they are equal");
+        continue;
+      }
+      // the category exists on at least one machine
+      liveCategories.add(category);
+      System.out.println("category still in system: " + category);
+     
+      if (newDatabases.size() == 1){
+        // no need to send data, it needs all it can get
+        continue;
+      }
+       // if the first machine is down
+      if(prevHashes[0] == hashesToRemove[0] || prevHashes[0] == hashesToRemove[1]) {
+        // second machine send categories to these new machines
+        // if the second machine is down, give up, can't take care of all failures
+        // only delete the category on your second send
+        if (prevHashes[1] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[0], category, "NO"); 
+        }
+        if (prevHashes[1] != newHashes[1]){         
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
         }
 
-        if(prevHashes[1] == hashesToRemove[0] || prevHashes[1] == prevHashes[1]) {
-          // first machine you send categories to these new machines
-          if (prevHashes[0] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "NO"); 
-          }
-          if (prevHashes[0] != newHashes[1]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category, "YES");
-          }
+      }
+
+      if(prevHashes[1] == hashesToRemove[0] || prevHashes[1] == prevHashes[1]) {
+        // first machine you send categories to these new machines
+        if (prevHashes[0] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "NO"); 
         }
-        else {
-          if (prevHashes[0] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "YES"); 
-          }
-          if (prevHashes[1] != newHashes[1]) {
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
-          }
+        if (prevHashes[0] != newHashes[1]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category, "YES");
+        }
+      }
+      else {
+        if (prevHashes[0] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "YES"); 
+        }
+        if (prevHashes[1] != newHashes[1]) {
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
         }
       }
     }
     // needs old 
     System.out.println("printing new categories list...");
-    System.out.println(categories.toString());
     synchronized(categories) {
       categories = new ArrayList<String>(liveCategories);
     }
+    System.out.println(categories.toString());
     synchronized(databases) {
       databases = new ArrayList<String>(newDatabases);
     }   
@@ -210,11 +221,18 @@ public class FrontEndServer {
         // if the first two aren't the same
         int oldHash = oldHashes[j];
         int newHash = newHashes[j];
-        // if they're not equal
-        if (oldHash != newHash){
-          repartitionHelper(databases, oldHash, newHash, category, "YES");
-  
+        // if this hash is one of the new hashes, no need to add categories
+        if (oldHash == newHashes[0] || oldHash == newHashes[1]) {
+          // send over if it's different
+          if (oldHash != newHash) {
+            repartitionHelper(databases, oldHash, newHash, category, "NO");
+          }
         }
+        // this hash wasn't one of new hashes, go ahead and delete it
+        else if (oldHash != newHash){
+          repartitionHelper(databases, oldHash, newHash, category, "YES");
+        }
+
       }
     }
     return;
