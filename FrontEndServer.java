@@ -85,7 +85,7 @@ public class FrontEndServer {
   }
 
   // Helper for remove repartioning, which happens on addFiles
-  private void repartitionHelper(List<String> newDatabases, int oldHash, int newHash, String category) {
+  private void repartitionHelper(List<String> newDatabases, int oldHash, int newHash, String category, String delete) {
     String oldDb = databases.get(oldHash);
     String newDb = newDatabases.get(newHash);
 
@@ -95,6 +95,8 @@ public class FrontEndServer {
       // databaseIp and category
       params.add(newDb);
       params.add(category);
+      params.add(delete);
+
       client.execute("Database.sendCategory", params);
       System.out.println(category + " remapped from " + Integer.toString(oldHash) + ": " +
       oldDb + " to " + Integer.toString(newHash) + ": " + newDb);
@@ -141,31 +143,32 @@ public class FrontEndServer {
         // if the first machine is down
         if(prevHashes[0] == hashesToRemove[0] || prevHashes[0] == hashesToRemove[1]) {
           // second machine send categories to these new machines
-          // if they are different, hopefully it's up 
+          // if the second machine is down, give up, can't take care of all failures
+          // only delete the category on your second send
           if (prevHashes[1] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[0], category); 
+            repartitionHelper(newDatabases, prevHashes[1], newHashes[0], category, "NO"); 
           }
           if (prevHashes[1] != newHashes[1]){         
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category);
+            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
           }
 
         }
+
         if(prevHashes[1] == hashesToRemove[0] || prevHashes[1] == prevHashes[1]) {
           // first machine you send categories to these new machines
-          // if they are different 
           if (prevHashes[0] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category); 
+            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "NO"); 
           }
           if (prevHashes[0] != newHashes[1]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category);
+            repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category, "YES");
           }
         }
         else {
           if (prevHashes[0] != newHashes[0]) {
-            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category); 
+            repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "YES"); 
           }
           if (prevHashes[1] != newHashes[1]) {
-            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category);
+            repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
           }
         }
       }
@@ -185,14 +188,11 @@ public class FrontEndServer {
      
   }
 
-  // repartition? when? --> when new database joins
-  // should this be static?
   private void addRepartion(){
     // go through categories
     for (int i = 0; i < categories.size(); i++) {
       String category = categories.get(i);
       System.out.println("Looking at new category: " + category);
-      Boolean firstOffline = false;
 
       int[] oldHashes = hash(category, databases.size() - 1);
       int[] newHashes = hash(category, databases.size());
@@ -205,36 +205,12 @@ public class FrontEndServer {
 
       for (int j = 0; j < oldHashes.length; j++) {
         // if the first two aren't the same
-        String oldDb = databases.get(oldHashes[j]);
-        String newDb = databases.get(newHashes[j]);
+        int oldHash = oldHashes[j];
+        int newHash = newHashes[j];
         // if they're not equal
-        if (!oldDb.equals(newDb)){
-          try {
-            XmlRpcClient client = createClient(oldDb);
-            List<String> params = new ArrayList<String>();
-            // databaseIp and category
-            params.add(databases.get(newHashes[j]));
-            params.add(category);
-           
-            System.out.println(category + " remapped from " + Integer.toString(oldHashes[j]) + ": " +
-            oldDb + " to " 
-            + Integer.toString(newHashes[j]) + ": " + newDb) ;
-            System.out.println("Find it there from now on!");
-            // the first wasn't able to send over its categories 
-            // because it is dead
-            if (firstOffline){
-              // send to first client too, just do the best you can!
-              XmlRpcClient client2 = createClient(databases.get(oldHashes[0]));
-               client.execute("Database.sendCategory", params);
-            }
-          }
-          catch(Exception e) {
-            // will be used to send twice
-            if (i == 0) {
-              firstOffline = true;
-            }
-            System.out.println("(FronEnd, repartition) Client exception" + e);
-          }
+        if (oldHash != newHash){
+          repartitionHelper(databases, oldHash, newHash, category, "yes");
+  
         }
       }
     }

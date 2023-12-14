@@ -65,6 +65,13 @@ public class DatabaseServer {
     return client;
   }
 
+  /**
+   * A helper method to open a file and get its contents
+   * 
+   * @param filePath the file being opened
+   * 
+   * @return the contents as a string
+   */
   private String getFileContents(String filePath) {
     try{
       String fileContents = "";
@@ -166,12 +173,13 @@ public class DatabaseServer {
     }
   }
 
-
-  public boolean sendCategory(String databaseIp, String category){
-    String categoryPath = workingDir + "/Database/" + category;
+  public boolean sendCategory(String databaseIp, String category, String delete){
+    File categoryFile = new File(workingDir + "/Database/" + category);
+    Path categoryPath = categoryFile.toPath();
     
-    if(Files.exists(Paths.get(categoryPath)) && Files.isDirectory(Paths.get(categoryPath))){
-      File categoryFile = new File(categoryPath);
+    if(Files.isDirectory(categoryPath)){
+      System.out.println(categoryPath.toString());
+      
       String[] files = categoryFile.list();
       for (String file: files) {
         // get the file path and send it over to getfile contents,
@@ -194,10 +202,53 @@ public class DatabaseServer {
         }
       }
       // delete an entire folder after all has been sent
+    }
+    else{
+      //DB doesnt have cat specified
+      return false;
+    }
+    System.out.println("STARTING TO DELETE CAT");
+    if (delete.equals("YES")) {
       deleteFolder(categoryFile);
     }
-
     return true; 
+  }
+
+  /**
+   * A method to delete an item from the database
+   * 
+   * @param category the category of the file being deleted
+   * @param fileName the file's name
+   * 
+   * @return true or false is successful or not
+   */
+  public String deleteItem(String category, String fileName){
+    System.out.println("DELETING FILE");
+    String categoryPath = workingDir + "/Database/" + category;
+
+    //Checks to see if the Cat is a dir
+    if(Files.isDirectory(Paths.get(categoryPath))){ //Or this
+      File toBeDeleted = new File(categoryPath + "/" + fileName);
+      Path filePath = toBeDeleted.toPath();
+      if(!Files.isRegularFile(filePath)) return "false"; //This is not working
+      synchronized(objectLock) { 
+        //Is inconsequential to delete something that doesnt exist however
+        toBeDeleted.delete();
+        }
+      
+      File categoryFile = new File(categoryPath);
+      if(categoryFile.list().length == 0){
+        synchronized(objectLock){
+          categoryFile.delete();
+        }
+        return "delete";
+      }
+      
+      return "true";
+    }
+    else{
+      return "false";
+    }
   }
 
   /**
@@ -207,6 +258,7 @@ public class DatabaseServer {
    *                the whole database)
    */
   public static void deleteFolder(File element) {
+    System.out.println("DELETING FOLDER");
     if(element.isDirectory()){
       String[] files = element.list();
       if(files.length != 0){
@@ -216,9 +268,9 @@ public class DatabaseServer {
         }
       }
     }
-    // synchronized(objectLock) { 
-    //   element.delete();
-    // }
+    synchronized(objectLock) { 
+      element.delete();
+    }
   }
 
   
