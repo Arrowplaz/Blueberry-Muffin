@@ -283,9 +283,18 @@ public class Client {
     
     //Identify the best Frontend for this user
     regionSmartSelect();
-
+    //Track time of last region smart select
+    long lastRSS = System.currentTimeMillis();
+    
     //Take in commands from the user
      while(true){
+      long currentTime = System.currentTimeMillis();
+      //See if 5 minutes have passed last RSS
+      if((currentTime - lastRSS) / 1000.0 > 300){ //The divide by 1000 converts MS to seconds, then compare to 300
+        lastRSS = System.currentTimeMillis();
+        regionSmartSelect();
+      }
+
       Scanner Scanner = new Scanner(System.in);  // Create a Scanner object
       System.out.println("Enter Function and Parameters");
 
