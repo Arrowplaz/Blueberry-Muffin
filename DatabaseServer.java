@@ -208,8 +208,8 @@ public class DatabaseServer {
       //DB doesnt have cat specified
       return false;
     }
-    System.out.println("STARTING TO DELETE CAT");
     if (delete.equals("YES")) {
+      System.out.println("STARTING TO DELETE CAT");
       deleteFolder(categoryFile);
     }
     return true; 

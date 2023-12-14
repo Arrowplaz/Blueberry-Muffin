@@ -35,7 +35,7 @@ public class FrontEndServer {
   // instead have a hashfunction with the number of databases
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFrontEnds = new ArrayList<>();
-  private static Boolean partitionNeeded = false;
+  private static Boolean repartitionNeeded = false;
   private static final int PORTNUMBER = 8413;
 
 
@@ -120,6 +120,10 @@ public class FrontEndServer {
     newDatabases.remove(hashesToRemove[0]);
     newDatabases.remove(hashesToRemove[1]);
     // you remove the last two databases
+    synchronized(repartitionNeeded) {
+      repartitionNeeded = false;
+    }
+    
     if (newDatabases.size() == 0) {
       synchronized (categories) {
         categories = new ArrayList<String>();
@@ -134,6 +138,9 @@ public class FrontEndServer {
     for (String category : categories) {
       int[] prevHashes = hash(category, databases.size());
       int[] newHashes = hash(category, databases.size() - hashesToRemove.length);
+      System.out.println("Looking at this cateogry: " + category);
+      System.out.println(prevHashes.toString());
+      System.out.println(newHashes.toString());
       //(1, 2) where 
       // if this category still exists in the current databases
       if (!prevHashes.equals(hashesToRemove)) {
@@ -181,11 +188,7 @@ public class FrontEndServer {
     }
     synchronized(databases) {
       databases = new ArrayList<String>(newDatabases);
-    }
-    synchronized(partitionNeeded) {
-      partitionNeeded = false;
-    }
-     
+    }   
   }
 
   private void addRepartion(){
@@ -284,7 +287,9 @@ public class FrontEndServer {
       try {
         // think about returns here
         client.execute("Database.addItem", params);
-        categories.add(category);
+        if (!categories.contains(category)) {
+          categories.add(category);
+        }
         return true;
       } catch (Exception e) {
         if (i == 0) {
@@ -293,13 +298,13 @@ public class FrontEndServer {
         // if the first machine is down, and this one is inaccessible --> repartition
         if (i == 1 && firstOffline) {
           System.out.println("Database unaccessible: " + e);
-          synchronized (partitionNeeded){
-            partitionNeeded = true;
+          synchronized (repartitionNeeded){
+            repartitionNeeded = true;
           }
           // synchronize such that only one process can come to this at
           // a time
           synchronized (databases) {
-            if (partitionNeeded) {
+            if (repartitionNeeded) {
               removeRepartition(hashes);
             }
           }
