@@ -170,7 +170,15 @@ public class FrontEndServer {
     // in addition to this, send requests to all other frontEnds
     try {
       // think about returns here
-      client.execute("Database.deleteItem", params.toArray());
+      String result = (String) client.execute("Database.deleteItem", params.toArray());
+      if(result.equals("false")){
+        System.out.println("Unable to delete from DB");
+        return false;
+      }
+      else if(result.equals("delete")){
+        System.out.println("Category: " + category + " is empty, deleting it");
+        categories.remove(category);
+      }
     } catch (Exception e) {
       System.out.println("Database unaccessible: " + e);
       System.out.println("removing database " + database);
