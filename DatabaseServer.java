@@ -72,6 +72,13 @@ public class DatabaseServer {
    * 
    * @return the contents as a string
    */
+  /**
+   * A helper method to open a file and get its contents
+   * 
+   * @param filePath the file being opened
+   * 
+   * @return the contents as a string
+   */
   private String getFileContents(String filePath) {
     try{
       String fileContents = "";
@@ -174,7 +181,7 @@ public class DatabaseServer {
   }
 
 
-  public boolean sendCategory(String databaseIp, String category){
+  public boolean sendCategory(String databaseIp, String category, String delete){
     File categoryFile = new File(workingDir + "/Database/" + category);
     Path categoryPath = categoryFile.toPath();
     
@@ -208,8 +215,10 @@ public class DatabaseServer {
       //DB doesnt have cat specified
       return false;
     }
-    System.out.println("STARTING TO DELETE CAT");
-    deleteFolder(categoryFile);
+    if (delete.equals("YES")) {
+      System.out.println("STARTING TO DELETE CAT");
+      deleteFolder(categoryFile);
+    }
     return true; 
   }
 

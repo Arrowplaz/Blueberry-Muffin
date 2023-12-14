@@ -31,10 +31,11 @@ public class FrontEndServer {
   // What do we want to see?
   
   // list machines to the genre they are in charge of
-  private static List<String> categories = new ArrayList<String>();
+  private static ArrayList<String> categories = new ArrayList<String>();
   // instead have a hashfunction with the number of databases
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFrontEnds = new ArrayList<>();
+  private static Boolean repartitionNeeded = false;
   private static final int PORTNUMBER = 8413;
 
 
@@ -83,34 +84,155 @@ public class FrontEndServer {
     return client;
   }
 
-  // repartition? when? --> when new database joins
-  // should this be static?
-  private void repartion(){
-    // how would repartitioning work 
-    // hash with old values and send to different systems
-    // hopefully it's uniform enough that it doesn't overload the system
-    // Should this server be unavailable during repartitions? yes? --> ask barker 
+  // Helper for remove repartioning, which happens on addFiles
+  private void repartitionHelper(List<String> newDatabases, int oldHash, int newHash, String category, String delete) {
+    String oldDb = databases.get(oldHash);
+    String newDb = newDatabases.get(newHash);
+
+    try {
+      XmlRpcClient client = createClient(oldDb);
+      List<String> params = new ArrayList<String>();
+      // databaseIp and category
+      params.add(newDb);
+      params.add(category);
+      params.add(delete);
+
+      client.execute("Database.sendCategory", params);
+      System.out.println(category + " remapped from " + Integer.toString(oldHash) + ": " +
+      oldDb + " to " + Integer.toString(newHash) + ": " + newDb);
+      System.out.println("Find it there from now on!");
+    }
+    catch(Exception e) {
+      // will be used to send twice
+      System.out.println("(FronEnd, repartition) Client exception" + e);
+    }
+
+  }
+
+  /*
+   * ok so 1. get the new partitions, and get the live databases 
+   * from newdatabase so that 
+   */
+  // only trigered when 2 databases are removed
+  private void removeRepartition(int[] hashesToRemove) {
+    ArrayList<String> newDatabases = new ArrayList<String>(databases);
+    ArrayList<String> liveCategories = new ArrayList<String>();
+    newDatabases.remove(hashesToRemove[0]);
+    newDatabases.remove(hashesToRemove[1]);
+    // you remove the last two databases
+    synchronized(repartitionNeeded) {
+      repartitionNeeded = false;
+    }
+    
+    if (newDatabases.size() == 0) {
+      synchronized (categories) {
+        categories = new ArrayList<String>();
+      }
+      synchronized(databases) {
+        databases = new ArrayList<String>();
+      }
+      System.out.println("No databases left! Everything cleared.");
+      return;
+    }
+
+    for (String category : categories) {
+      int[] prevHashes = hash(category, databases.size());
+      int[] newHashes = hash(category, databases.size() - hashesToRemove.length);
+      System.out.println("Looking at this cateogry: " + category);
+      System.out.println("(" + prevHashes[0] + ", " + prevHashes[1] +")");
+      System.out.println("(" + newHashes[0] + ", " + newHashes[1] +")");
+      //(0, 2) --> (0, 0))
+      System.out.println("Hashes remove: " + "(" + hashesToRemove[0] + ", " + hashesToRemove[1] +")");
+      //(0, 1) removed
+
+      //(1, 2) where 
+      // if this category doesn't exist in the databases
+      if (prevHashes[0] == hashesToRemove[0] && prevHashes[1] == hashesToRemove[1]) {
+        System.out.println("Literally they are equal");
+        continue;
+      }
+      // the category exists on at least one machine
+      liveCategories.add(category);
+      System.out.println("category still in system: " + category);
+     
+      if (newDatabases.size() == 1){
+        // no need to send data, it needs all it can get
+        continue;
+      }
+       // if the first machine is down
+      if(prevHashes[0] == hashesToRemove[0] || prevHashes[0] == hashesToRemove[1]) {
+        // second machine send categories to these new machines
+        // if the second machine is down, give up, can't take care of all failures
+        // only delete the category on your second send
+        if (prevHashes[1] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[0], category, "NO"); 
+        }
+        if (prevHashes[1] != newHashes[1]){         
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
+        }
+
+      }
+
+      if(prevHashes[1] == hashesToRemove[0] || prevHashes[1] == prevHashes[1]) {
+        // first machine you send categories to these new machines
+        if (prevHashes[0] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "NO"); 
+        }
+        if (prevHashes[0] != newHashes[1]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category, "YES");
+        }
+      }
+      else {
+        if (prevHashes[0] != newHashes[0]) {
+          repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "YES"); 
+        }
+        if (prevHashes[1] != newHashes[1]) {
+          repartitionHelper(newDatabases, prevHashes[1], newHashes[1], category, "YES");
+        }
+      }
+    }
+    // needs old 
+    System.out.println("printing new categories list...");
+    synchronized(categories) {
+      categories = new ArrayList<String>(liveCategories);
+    }
+    System.out.println(categories.toString());
+    synchronized(databases) {
+      databases = new ArrayList<String>(newDatabases);
+    }   
+  }
+
+  private void addRepartion(){
+    // go through categories
     for (int i = 0; i < categories.size(); i++) {
       String category = categories.get(i);
       System.out.println("Looking at new category: " + category);
-      int oldHash = hash(category, databases.size() - 1)[0];
-      int newHash = hash(category, databases.size())[0];
 
-      if (oldHash != newHash) {
-        try {
-          XmlRpcClient client = createClient(databases.get(oldHash));
-          List<String> params = new ArrayList<String>();
-          // databaseIp and category
-          params.add(databases.get(newHash));
-          params.add(category);
-          client.execute("Database.sendCategory", params);
-          System.out.println(category + " remapped from " + Integer.toString(oldHash) + " to " 
-          + Integer.toString(newHash));
-          System.out.println("Find it there from now on!");
+      int[] oldHashes = hash(category, databases.size() - 1);
+      int[] newHashes = hash(category, databases.size());
+
+      // if they are the same for some reason
+      // this shouldn't happen but just in case
+      if (oldHashes.equals(newHashes)) {
+        continue; 
+      }
+
+      for (int j = 0; j < oldHashes.length; j++) {
+        // if the first two aren't the same
+        int oldHash = oldHashes[j];
+        int newHash = newHashes[j];
+        // if this hash is one of the new hashes, no need to add categories
+        if (oldHash == newHashes[0] || oldHash == newHashes[1]) {
+          // send over if it's different
+          if (oldHash != newHash) {
+            repartitionHelper(databases, oldHash, newHash, category, "NO");
+          }
         }
-        catch(Exception e) {
-          System.out.println("(FronEnd, repartition) Client exception" + e);
+        // this hash wasn't one of new hashes, go ahead and delete it
+        else if (oldHash != newHash){
+          repartitionHelper(databases, oldHash, newHash, category, "YES");
         }
+
       }
     }
     return;
@@ -125,7 +247,6 @@ public class FrontEndServer {
     System.out.println("result of first hash: " + hash1);
     int hash2 = hash1 + 1;
     System.out.println(hash1%numMachines + " " + hash2%numMachines);
-    
     int[] hashes = {hash1%numMachines, hash2%numMachines};
 
     return hashes;
@@ -144,7 +265,7 @@ public class FrontEndServer {
     System.out.println("after add size: " + databases.size());
     // do we need to notify the database at all or?
     // fault tolerance all the way
-    repartion();
+    addRepartion();
     System.out.println("Successfully added!");
     return true;
   }
@@ -222,39 +343,88 @@ public class FrontEndServer {
     return true;
   }
   
+  private Boolean addItemToDbs(String category, String fileName, String contents, List<String> params) {
+    // if both are offline, return false, remove and then repartition
+    int[] hashes = hash(category, databases.size());
+    int index1 = hashes[0];
+    int index2 = hashes[1];
+    String[] dbs = {databases.get(index1), databases.get(index2)};
+    Boolean firstOffline = false;
+
+    System.out.println("This is the database chosen 1: " + dbs[0]);
+    System.out.println("This is the database chosen 2: " + dbs[1]);
+
+    for (int i = 0; i < dbs.length; i++) {
+      // if you only have one database for some reason, then only add once
+      // since hash will spit out (0, 0)
+      if (i == 1 && index1 == index2 && !firstOffline) {
+        System.out.println("first return in addItemToDbs");
+        return true;
+      }
+      // if your one database is offline, return false
+      else if (i == 1 && index1 == index2 && firstOffline) {
+        // there should be nothing in categories or databases
+        // also synchronize categories?
+        synchronized(databases) {
+          databases = new ArrayList<String>();
+          categories = new ArrayList<String>();
+        }
+        System.out.println("Second return in addItemToDbs");
+        return false;
+      }
+      String db = dbs[i];
+      System.out.println("sending to db: " + db);
+      XmlRpcClient client = createClient(db);
+      // try adding to each database
+      // if the first one fails, add to second
+      // if both fail, repartition and give up 
+      try {
+        // think about returns here
+        client.execute("Database.addItem", params);
+        if (!categories.contains(category)) {
+          categories.add(category);
+        }
+      } catch (Exception e) {
+        if (i == 0) {
+          firstOffline = true;
+        }
+        // if the first machine is down, and this one is inaccessible --> repartition
+        if (i == 1 && firstOffline) {
+          System.out.println("Database unaccessible: " + e);
+          synchronized (repartitionNeeded){
+            repartitionNeeded = true;
+          }
+          // synchronize such that only one process can come to this at
+          // a time
+          synchronized (databases) {
+            if (repartitionNeeded) {
+              removeRepartition(hashes);
+            }
+          }
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   public Boolean addItem(String category, String fileName, String contents, String leader){
     if (databases.size() == 0){
-      // or a string saying add a database... ?
       return false; 
     }
-
+    
     System.out.println("Adding item...");
-    int index = hash(category, databases.size())[0];
-    String database = databases.get(index);
-    ArrayList<String> liveFrontEnds = new ArrayList<String>();
-    System.out.println("This is the database chosen: " + database);
-    List<String> deadFrontEnds = new ArrayList<String>();
-
-    XmlRpcClient client = createClient(database);
+    // params for adding to Databases and, later, other frontEnds
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
     params.add(contents);
-    
-    // in addition to this, send requests to all other frontEnds
-    try {
-      // think about returns here
-      client.execute("Database.addItem", params);
-      categories.add(category);
-    } catch (Exception e) {
-      System.out.println("Database unaccessible: " + e);
-      System.out.println("removing database " + database);
-      synchronized (databases) {
-        databases.remove(database);
-      }
-      System.out.println("New size of databases list " + databases.size());
+
+    if (!addItemToDbs(category, fileName, contents, params)){
+      return false; 
     }
 
+    ArrayList<String> liveFrontEnds = new ArrayList<String>();
     // to avoid a recursive add where they all add to each other
     if (leader.equals("NO")) {
       System.out.println("Not coordinator, not adding to other FrontEnds...");
@@ -274,7 +444,7 @@ public class FrontEndServer {
         // use the same params
         frontEndClient.execute("FrontEnd.addItem", params);
         liveFrontEnds.add(frontEndIp);
-        System.out.println("successfully added to frontEnd above");
+        System.out.println("successfully added to frontEnd above: " + frontEndIp);
       } catch (Exception e) {
         System.out.println("failed to addItem to " + frontEndIp);
         System.out.println("(FrontEnd, addItem) " + e);
@@ -294,24 +464,34 @@ public class FrontEndServer {
    */
   public String getItem(String category, String fileName) {
     System.out.println("Size of database: " + databases.size());
-    int index = hash(category, databases.size())[0];
-    XmlRpcClient client = createClient(databases.get(index));
+    int[] hashes = hash(category, databases.size());
+    String database1 = databases.get(hashes[0]);
+    String database2 = databases.get(hashes[1]); 
+
+    XmlRpcClient client1 = createClient(database1);
+    XmlRpcClient client2 = createClient(database2);
+
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
 
     System.out.println("This is the category: " + category);
     System.out.println("This is the fileName: " + fileName);
-    System.out.println("This is the database ip: " + databases.get(index));
+    System.out.println("This is the database ip: " + database1);
 
     try{
-      String result = (String) client.execute("Database.getItem", params.toArray());
+      String result = (String) client1.execute("Database.getItem", params);
       return result;
     }
     catch (Exception e){
-      System.out.println("Failed to get file from Database");
-      // remove database from databases since it's not accesible
-      databases.remove(databases.get(index));
+      System.out.println("Failed to get file from Database1: " + e);
+      try {
+        String result = (String) client2.execute("Database.getItem", params);
+        return result;  
+      }
+      catch(Exception err) {
+        System.out.println("Failed to get file from Database2 too: " + err);
+      }
       return "";
     } 
   }
@@ -363,7 +543,7 @@ public class FrontEndServer {
   }
   // }
 
-  public static Boolean joinFrontEnd(String frontEndIp, String entryPoint) {
+  private static Boolean joinFrontEnd(String frontEndIp, String entryPoint) {
     // RPC call to accept frontEnds
     // needs to send its IP and the entryPoint IP
     XmlRpcClient client = createClient(entryPoint);
@@ -392,30 +572,30 @@ public class FrontEndServer {
 
   }
 
+// WE ARE NOT DOING THIS LOL
+  // public String lookupCategory(String category){
+  //   System.out.println("STARTING LOOKUP");
+  //   int index = hash(category, databases.size())[0];
+  //   XmlRpcClient client = createClient(databases.get(index));
+  //   List<String> params = new ArrayList<>();
+  //   params.add(category);
 
-  public String lookupCategory(String category){
-    System.out.println("STARTING LOOKUP");
-    int index = hash(category, databases.size())[0];
-    XmlRpcClient client = createClient(databases.get(index));
-    List<String> params = new ArrayList<>();
-    params.add(category);
-
-    try{
-      System.out.println("Executing");
-      String result = (String) client.execute("Database.getCategories", params);
-      System.out.println("Success");
-      if(result != null){
-        return result;
-      }
-      else{
-        return null;
-      }
-    }
-    catch(Exception e){
-      System.err.println("Front end failure" + e);
-      return null;
-    }
-  }
+  //   try{
+  //     System.out.println("Executing");
+  //     String result = (String) client.execute("Database.getCategories", params);
+  //     System.out.println("Success");
+  //     if(result != null){
+  //       return result;
+  //     }
+  //     else{
+  //       return null;
+  //     }
+  //   }
+  //   catch(Exception e){
+  //     System.err.println("Front end failure" + e);
+  //     return null;
+  //   }
+  // }
 
 
   /**
