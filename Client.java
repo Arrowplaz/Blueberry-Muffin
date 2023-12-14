@@ -198,7 +198,12 @@ public class Client {
 
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
-
+      //We are going to assume that a request for a nonexistent file will never come in
+      //DOUBLE CHECK THIS
+      if(fileContents.length == 0){
+        //This should cause the drop into the catch block, which will make the db go to another region
+        throw new Error("Did not recieve file");
+      }
       //Makes a file object using the given name
       File recievedFile = new File(Filename);
 
@@ -218,47 +223,47 @@ public class Client {
       System.out.println("Successfully retrieved: " + Filename);
     }
     catch(Exception e){
-      if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+      //If there is no backup frontEnd, fail
+      if(secondOptimalFrontEnd == null){
           System.err.println("Client exception: " + e);
           return;
         }
-        else{
-          optimalFrontEnd = secondOptimalFrontEnd;
-          secondOptimalFrontEnd = null;
-          System.out.println("CHANGING FRONTEND");
-          lookupFile(Category, Filename);
-        }
+      //If there is, replace optimal with backup and try again
+      else{
+        //This block can be hit by either a FE error or a DB error
+        optimalFrontEnd = secondOptimalFrontEnd;
+        secondOptimalFrontEnd = null;
+        System.out.println("CHANGING FRONTEND");
+        lookupFile(Category, Filename);
+      }
     }
   }
 
 
   private static void deleteFile(String category, String fileName){
-      XmlRpcClient client = createClient(optimalFrontEnd);
-      List<String> params = new ArrayList<>();
-      params.add(category);
-      params.add(fileName);
-      params.add("YES");
+    XmlRpcClient client = createClient(optimalFrontEnd);
+    List<String> params = new ArrayList<>();
+    params.add(category);
+    params.add(fileName);
+    params.add("YES");
 
-      try{
-        Boolean result = (Boolean) client.execute("FrontEnd.deleteItem", params.toArray());
-        if(result){
-          System.out.println("File: " + fileName + " was Sucessfully deleted from System"); 
-        }
-        else{
-          System.out.println("Failed to add");
-        }
+    try{
+      Boolean result = (Boolean) client.execute("FrontEnd.deleteItem", params.toArray());
+      if(result){
+        System.out.println("File: " + fileName + " was Sucessfully deleted from System"); 
       }
-      catch(Exception e){
-        if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
-          System.err.println("Client exception: " + e);
-          return;
-        }
-        else{
-          optimalFrontEnd = secondOptimalFrontEnd;
-          secondOptimalFrontEnd = null;
-          deleteFile(category, fileName);
-        }
+    }
+    catch(Exception e){
+      if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+        System.err.println("Client exception: " + e);
+        return;
       }
+      else{
+        optimalFrontEnd = secondOptimalFrontEnd;
+        secondOptimalFrontEnd = null;
+        deleteFile(category, fileName);
+      }
+    }
   }
 
 
