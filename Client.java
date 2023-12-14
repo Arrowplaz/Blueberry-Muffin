@@ -200,7 +200,7 @@ public class Client {
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
       //We are going to assume that a request for a nonexistent file will never come in
       //DOUBLE CHECK THIS
-      if(fileContents.length == 0){
+      if(fileContents.length() == 0){
         //This should cause the drop into the catch block, which will make the db go to another region
         throw new Error("Did not recieve file");
       }
