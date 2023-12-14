@@ -173,6 +173,7 @@ public class DatabaseServer {
     }
   }
 
+
   public boolean sendCategory(String databaseIp, String category, String delete){
     File categoryFile = new File(workingDir + "/Database/" + category);
     Path categoryPath = categoryFile.toPath();
