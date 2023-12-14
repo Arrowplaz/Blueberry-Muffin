@@ -267,6 +267,7 @@ public class FrontEndServer {
       // if you only have one database for some reason, then only add once
       // since hash will spit out (0, 0)
       if (i == 1 && index1 == index2 && !firstOffline) {
+        System.out.println("first return in addItemToDbs");
         return true;
       }
       // if your one database is offline, return false
@@ -277,9 +278,11 @@ public class FrontEndServer {
           databases = new ArrayList<String>();
           categories = new ArrayList<String>();
         }
+        System.out.println("Second return in addItemToDbs");
         return false;
       }
       String db = dbs[i];
+      System.out.println("sending to db: " + db);
       XmlRpcClient client = createClient(db);
       // try adding to each database
       // if the first one fails, add to second
@@ -290,7 +293,6 @@ public class FrontEndServer {
         if (!categories.contains(category)) {
           categories.add(category);
         }
-        return true;
       } catch (Exception e) {
         if (i == 0) {
           firstOffline = true;
