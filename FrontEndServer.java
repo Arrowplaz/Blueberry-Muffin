@@ -212,7 +212,7 @@ public class FrontEndServer {
         int newHash = newHashes[j];
         // if they're not equal
         if (oldHash != newHash){
-          repartitionHelper(databases, oldHash, newHash, category, "yes");
+          repartitionHelper(databases, oldHash, newHash, category, "YES");
   
         }
       }
