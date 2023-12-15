@@ -150,7 +150,6 @@ public class FrontEndServer {
       //(1, 2) where 
       // if this category doesn't exist in the databases
       if (prevHashes[0] == hashesToRemove[0] && prevHashes[1] == hashesToRemove[1]) {
-        System.out.println("Literally they are equal");
         continue;
       }
       // the category exists on at least one machine
@@ -253,7 +252,6 @@ public class FrontEndServer {
     return hashes;
   }
   
-  
   public Boolean addDatabase(String ipAddress){
     System.out.println(ipAddress + " wants to be added");
     // check if database already in 
@@ -271,45 +269,25 @@ public class FrontEndServer {
     return true;
   }
 
-  public boolean deleteItem(String category, String fileName, String leader){
+  public Boolean deleteItem(String category, String fileName, String leader){
     if (databases.size() == 0){
       // or a string saying add a database... ?
       return false; 
     }
-
-    System.out.println("Deleting item...");
-    int index = hash(category, databases.size())[0];
-    String database = databases.get(index);
     ArrayList<String> liveFrontEnds = new ArrayList<String>();
-    System.out.println("This is the database chosen: " + database);
-    List<String> deadFrontEnds = new ArrayList<String>();
+    System.out.println("Deleting item...");
 
-    XmlRpcClient client = createClient(database);
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
-
-    // in addition to this, send requests to all other frontEnds
-    try {
-      // think about returns here
-      String result = (String) client.execute("Database.deleteItem", params.toArray());
-      if(result.equals("false")){
-        System.out.println("Unable to delete from DB");
-        return false;
-      }
-      else if(result.equals("delete")){
-        System.out.println("Category: " + category + " is empty, deleting it");
-        categories.remove(category);
-      }
-    } catch (Exception e) {
-      System.out.println("Database unaccessible: " + e);
-      System.out.println("removing database " + database);
-      synchronized (databases) {
-        databases.remove(database);
-      }
-      System.out.println("New size of databases list " + databases.size());
+    String delResult = addDeleteHelper("delete", category, fileName, params); 
+    if (delResult.equals("false")){
       return false;
+    } 
+    else if (delResult.equals("repartition")) {
+      deleteItem(category, fileName, leader);
     }
+
 
     if (leader.equals("NO")) {
       System.out.println("Not coordinator, not deleting from other FrontEnds...");
@@ -344,7 +322,7 @@ public class FrontEndServer {
     return true;
   }
   
-  private Boolean addDeleteHelper(String method, String category, String fileName, String contents, List<String> params) {
+  private String addDeleteHelper(String method, String category, String fileName, List<String> params) {
     int[] hashes = hash(category, databases.size());
     int index1 = hashes[0];
     int index2 = hashes[1];
@@ -359,7 +337,7 @@ public class FrontEndServer {
       // since hash will spit out (0, 0)
       if (i == 1 && index1 == index2 && !firstOffline) {
         System.out.println("first return in addDeleteHelper");
-        return true;
+        return "true";
       }
       // if your one database is offline, return false
       else if (i == 1 && index1 == index2 && firstOffline) {
@@ -370,7 +348,8 @@ public class FrontEndServer {
           categories = new ArrayList<String>();
         }
         System.out.println("Second return in addDeleteHelper");
-        return false;
+        // offline
+        return "false";
       }
       String db = dbs[i];
       System.out.println("sending to db: " + db);
@@ -384,15 +363,21 @@ public class FrontEndServer {
           String result = (String) client.execute("Database.deleteItem", params.toArray());
           if(result.equals("false")){
             System.out.println("Unable to delete from DB");
-            return false;
+            return "false";
           }
           else if(result.equals("delete")){
             System.out.println("Category: " + category + " is empty, deleting it");
-            categories.remove(category);
+            synchronized(categories) {
+              categories.remove(category);
+            }
           }
         }
         else {
-          client.execute("Database.addItem", params);
+          Boolean result = (Boolean) client.execute("Database.addItem", params);
+          // database addition went wrong for some reason
+          if (!result) {
+            return "false";
+          }
           if (!categories.contains(category)) {
             categories.add(category);
           }
@@ -402,7 +387,7 @@ public class FrontEndServer {
         if (i == 0) {
           firstOffline = true;
         }
-        // if the first machine is down, and this one is inaccessible --> repartition
+        // if both machines are down
         if (i == 1 && firstOffline) {
           System.out.println("Database unaccessible: " + e);
           synchronized (repartitionNeeded){
@@ -415,11 +400,11 @@ public class FrontEndServer {
               removeRepartition(hashes);
             }
           }
-          return false;
+          return "repartition";
         }
       }
     }
-    return true;
+    return "true";
   }
 
   public Boolean addItem(String category, String fileName, String contents, String leader){
@@ -434,8 +419,13 @@ public class FrontEndServer {
     params.add(fileName);
     params.add(contents);
 
-    if (!addItemToDbs(category, fileName, contents, params)){
+    String addResult = addDeleteHelper("add", category, fileName, params);
+    if (addResult.equals("repartition")){
       addItem(category, fileName, contents, leader);
+    }
+    // fails for some reason 
+    else if (addResult.equals("false")){
+      return false;
     }
 
     ArrayList<String> liveFrontEnds = new ArrayList<String>();
