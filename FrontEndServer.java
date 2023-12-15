@@ -232,7 +232,6 @@ public class FrontEndServer {
         else if (oldHash != newHash){
           repartitionHelper(databases, oldHash, newHash, category, "YES");
         }
-
       }
     }
     return;
@@ -343,8 +342,7 @@ public class FrontEndServer {
     return true;
   }
   
-  private Boolean addItemToDbs(String category, String fileName, String contents, List<String> params) {
-    // if both are offline, return false, remove and then repartition
+  private Boolean addDeleteHelper(String method, String category, String fileName, String contents, List<String> params) {
     int[] hashes = hash(category, databases.size());
     int index1 = hashes[0];
     int index2 = hashes[1];
@@ -358,7 +356,7 @@ public class FrontEndServer {
       // if you only have one database for some reason, then only add once
       // since hash will spit out (0, 0)
       if (i == 1 && index1 == index2 && !firstOffline) {
-        System.out.println("first return in addItemToDbs");
+        System.out.println("first return in addDeleteHelper");
         return true;
       }
       // if your one database is offline, return false
@@ -369,7 +367,7 @@ public class FrontEndServer {
           databases = new ArrayList<String>();
           categories = new ArrayList<String>();
         }
-        System.out.println("Second return in addItemToDbs");
+        System.out.println("Second return in addDeleteHelper");
         return false;
       }
       String db = dbs[i];
@@ -380,10 +378,24 @@ public class FrontEndServer {
       // if both fail, repartition and give up 
       try {
         // think about returns here
-        client.execute("Database.addItem", params);
-        if (!categories.contains(category)) {
-          categories.add(category);
+        if (method.equals("delete")) {
+          String result = (String) client.execute("Database.deleteItem", params.toArray());
+          if(result.equals("false")){
+            System.out.println("Unable to delete from DB");
+            return false;
+          }
+          else if(result.equals("delete")){
+            System.out.println("Category: " + category + " is empty, deleting it");
+            categories.remove(category);
+          }
         }
+        else {
+          client.execute("Database.addItem", params);
+          if (!categories.contains(category)) {
+            categories.add(category);
+          }
+        }
+
       } catch (Exception e) {
         if (i == 0) {
           firstOffline = true;
@@ -420,7 +432,7 @@ public class FrontEndServer {
     params.add(fileName);
     params.add(contents);
 
-    if (!addItemToDbs(category, fileName, contents, params)){
+    if (!addDeleteHelper("add", category, fileName, contents, params)){
       return false; 
     }
 
@@ -571,32 +583,6 @@ public class FrontEndServer {
     } 
 
   }
-
-// WE ARE NOT DOING THIS LOL
-  // public String lookupCategory(String category){
-  //   System.out.println("STARTING LOOKUP");
-  //   int index = hash(category, databases.size())[0];
-  //   XmlRpcClient client = createClient(databases.get(index));
-  //   List<String> params = new ArrayList<>();
-  //   params.add(category);
-
-  //   try{
-  //     System.out.println("Executing");
-  //     String result = (String) client.execute("Database.getCategories", params);
-  //     System.out.println("Success");
-  //     if(result != null){
-  //       return result;
-  //     }
-  //     else{
-  //       return null;
-  //     }
-  //   }
-  //   catch(Exception e){
-  //     System.err.println("Front end failure" + e);
-  //     return null;
-  //   }
-  // }
-
 
   /**
    * The main method
