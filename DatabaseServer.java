@@ -110,10 +110,10 @@ public class DatabaseServer {
 
     File file = new File(filePath);
     if(file.isFile()){
-      return getFileContents(filePath);
+      return "0" + getFileContents(filePath);
     }
     else{
-      return "";
+      return "1";
     }
   }
 
