@@ -284,10 +284,8 @@ public class FrontEndServer {
     if (delResult.equals("false")){
       return false;
     } 
-    else if (delResult.equals("repartition")) {
-      deleteItem(category, fileName, leader);
-    }
-
+    // By this point either deleting was successful, or the databases in charge of
+    // the category are down, either way forward the requests to the other frontEnds
 
     if (leader.equals("NO")) {
       System.out.println("Not coordinator, not deleting from other FrontEnds...");
@@ -322,6 +320,10 @@ public class FrontEndServer {
     return true;
   }
   
+  // returns are strings because there are three possible 
+  // reasons why since this is combination of the three.
+  // either adding failed or succeeded, or there was a repartition
+  // similarly for removes, if the file did not exist
   private String addDeleteHelper(String method, String category, String fileName, List<String> params) {
     int[] hashes = hash(category, databases.size());
     int index1 = hashes[0];
@@ -354,9 +356,7 @@ public class FrontEndServer {
       String db = dbs[i];
       System.out.println("sending to db: " + db);
       XmlRpcClient client = createClient(db);
-      // try adding to each database
-      // if the first one fails, add to second
-      // if both fail, repartition and give up 
+
       try {
         // think about returns here
         if (method.equals("delete")) {
