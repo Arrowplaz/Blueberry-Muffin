@@ -117,8 +117,10 @@ public class FrontEndServer {
   private void removeRepartition(int[] hashesToRemove) {
     ArrayList<String> newDatabases = new ArrayList<String>(databases);
     ArrayList<String> liveCategories = new ArrayList<String>();
-    newDatabases.remove(hashesToRemove[0]);
-    newDatabases.remove(hashesToRemove[1]);
+    // fix this, remove the actual elements not the indices this fucks 
+    // it up
+    newDatabases.remove(databases.get(hashesToRemove[0]));
+    newDatabases.remove(databases.get(hashesToRemove[1]));
     // you remove the last two databases
     synchronized(repartitionNeeded) {
       repartitionNeeded = false;
@@ -396,7 +398,7 @@ public class FrontEndServer {
           }
           // synchronize such that only one process can come to this at
           // a time
-          synchronized (databases) {
+          synchronized (repartitionNeeded) {
             if (repartitionNeeded) {
               removeRepartition(hashes);
             }
@@ -421,7 +423,7 @@ public class FrontEndServer {
     params.add(contents);
 
     if (!addItemToDbs(category, fileName, contents, params)){
-      return false; 
+      addItem(category, fileName, contents, leader);
     }
 
     ArrayList<String> liveFrontEnds = new ArrayList<String>();
