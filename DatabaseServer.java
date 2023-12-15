@@ -81,16 +81,17 @@ public class DatabaseServer {
    */
   private String getFileContents(String filePath) {
     try{
-      String fileContents = "";
+      StringBuilder fileContents = new StringBuilder();
       File currFile = new File(filePath);
       Scanner fileReader = new Scanner(currFile);
       while(fileReader.hasNextLine()){
-        fileContents += fileReader.nextLine();
-        fileContents += "\n";
+        fileContents.append(fileReader.nextLine());
+        fileContents.append("\r\n");
       }
       fileReader.close();
-      return fileContents; 
+      return fileContents.toString(); 
     }
+    
     catch(Exception e){
       System.out.println("Database Error: " + e);
       return "";

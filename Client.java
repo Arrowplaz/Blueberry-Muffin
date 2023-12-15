@@ -133,13 +133,13 @@ public class Client {
 
     //Opens the given file and reads the content
     // perhaps use a string builder instead
-    String dataToBeSent = "";
+    StringBuilder dataToBeSent = new StringBuilder();
     try{
       File file = new File(outgoingFile);
-      Scanner fileReader = new Scanner(file);
+      Scanner fileReader = new Scanner(file); 
       while(fileReader.hasNextLine()){
-        dataToBeSent += fileReader.nextLine();
-        dataToBeSent += "\r\n";
+        dataToBeSent.append(fileReader.nextLine());
+        dataToBeSent.append("\r\n");
       }
     }
     catch(Exception e){
@@ -156,10 +156,10 @@ public class Client {
      
 
       XmlRpcClient client = createClient(optimalFrontEnd);
-      List<String> params = new ArrayList<>();
+      List<String> params = new ArrayList<String>();
       params.add(category); //Category of the file
       params.add(outgoingFile); //Name of the file
-      params.add(dataToBeSent); //Contents of the file
+      params.add(dataToBeSent.toString()); //Contents of the file
       params.add(optimalFrontEnd); //The 'leader' frontEnd
 
       try{
@@ -307,8 +307,8 @@ public class Client {
       System.out.println("Enter Function and Parameters");
 
       String[] cmdLineParse = Scanner.nextLine().split(" ");
-      if(cmdLineParse.length < 2 || cmdLineParse.length > 3){
-        System.out.println("Usage: [Function] [Params]");
+      if(cmdLineParse.length <= 2 || cmdLineParse.length > 3){
+        System.out.println("Usage: [Function] [Category] [Filename]");
         continue;
       }
       else{
