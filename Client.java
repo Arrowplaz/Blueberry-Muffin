@@ -202,9 +202,14 @@ public class Client {
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
       //We are going to assume that a request for a nonexistent file will never come in
       //DOUBLE CHECK THIS
+      // this only 
       if(fileContents.length() == 0){
         //This should cause the drop into the catch block, which will make the db go to another region
         throw new Error("Did not recieve file");
+      }
+      else if (fileContents.length() == 1) {
+        System.out.println("File does not exist");
+        return;
       }
       //Makes a file object using the given name
       File recievedFile = new File(Filename);
@@ -219,7 +224,8 @@ public class Client {
 
       //Write the contents to the file
       FileWriter fileWriter = new FileWriter(Filename);
-      fileWriter.write(fileContents);
+      System.out.println((int)fileContents.charAt(1));
+      fileWriter.write(fileContents.substring(1));
       fileWriter.close();
 
       System.out.println("Successfully retrieved: " + Filename);
@@ -227,7 +233,7 @@ public class Client {
     catch(Exception e){
       //If there is no backup frontEnd, fail
       if(secondOptimalFrontEnd == null){
-          System.err.println("Client exception: " + e);
+          System.err.println("Both regions down, try another entry point..." + e);
           return;
         }
       //If there is, replace optimal with backup and try again
