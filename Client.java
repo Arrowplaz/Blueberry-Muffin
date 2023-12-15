@@ -7,16 +7,12 @@ import java.net.URL;
 import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import java.io.FileWriter;
+import java.util.*; 
+import java.util.stream.*; 
 /**
  * A Java client to the online bookstore.
  */
 public class Client {
-
-  /*
-   * The List of frontend servers
-   */
-  private static ArrayList<String> frontendServers;
-
   /**
    * A magic number for the port number being used
    * Standardized across all our classes
@@ -51,17 +47,20 @@ public class Client {
     XmlRpcClient entryClient = createClient(entryPoint);
     List<String> params = new ArrayList<>();
 
-
-    //Retrieve the list of all frontends
     Object[] frontEnds;
+    //Retrieve the list of all frontends
     try{
       frontEnds = (Object[]) entryClient.execute("FrontEnd.getFrontEnds", params);
+      Object entryAsFE = entryPoint;
     }
     catch(Exception e){
       System.out.println("Could not get Frontends from entry point, ensure entry point is online");
       System.out.println(e);
       return;
     }
+
+    List<Object> allFrontEnds = Arrays.asList(frontEnds);
+    allFrontEnds.add(entryPoint);
 
     //Keep track of the 2 frontend with the best latency
     String bestFrontEnd = "";
