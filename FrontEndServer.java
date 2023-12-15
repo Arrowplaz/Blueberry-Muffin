@@ -36,6 +36,9 @@ public class FrontEndServer {
   private static ArrayList<String> databases = new ArrayList<>();
   private static ArrayList<String> otherFrontEnds = new ArrayList<>();
   private static Boolean repartitionNeeded = false;
+  // variable so that heap space is not overwhelmed by the amount of
+  // requests coming in
+  private static Boolean addInProgress = false;
   private static final int PORTNUMBER = 8413;
 
 
@@ -407,13 +410,22 @@ public class FrontEndServer {
     return "true";
   }
 
+  public Boolean addInProgress() {
+    return addInProgress;
+  }
+
   public Boolean addItem(String category, String fileName, String contents, String leader){
+    // this couldn't be synchronize fucked right
+    addInProgress = true; 
+
     if (databases.size() == 0){
+      addInProgress = false;
       return false; 
     }
     
     System.out.println("Adding item...");
     // params for adding to Databases and, later, other frontEnds
+    List<String> progressParams = new ArrayList<String>();
     List<String> params = new ArrayList<String>();
     params.add(category);
     params.add(fileName);
@@ -425,6 +437,7 @@ public class FrontEndServer {
     }
     // fails for some reason 
     else if (addResult.equals("false")){
+      addInProgress = false;
       return false;
     }
 
@@ -432,6 +445,7 @@ public class FrontEndServer {
     // to avoid a recursive add where they all add to each other
     if (leader.equals("NO")) {
       System.out.println("Not coordinator, not adding to other FrontEnds...");
+      addInProgress = false;
       return true;
     }
 
@@ -443,8 +457,12 @@ public class FrontEndServer {
     for (int i = 0; i < otherFrontEnds.size(); i ++) {
       String frontEndIp = otherFrontEnds.get(i);
       System.out.println("Adding item to FE: + " + frontEndIp);
+
       try {
         XmlRpcClient frontEndClient = createClient(frontEndIp);
+        while((Boolean) frontEndClient.execute("FrontEnd.addInProgress", progressParams)) {
+          continue;
+        }
         // use the same params
         frontEndClient.execute("FrontEnd.addItem", params);
         liveFrontEnds.add(frontEndIp);
@@ -460,6 +478,7 @@ public class FrontEndServer {
       otherFrontEnds = new ArrayList<String>(liveFrontEnds);
     }
     System.out.println("number of alive frontEnds " + otherFrontEnds.size());
+    addInProgress = false;
     return true;
   }
 
