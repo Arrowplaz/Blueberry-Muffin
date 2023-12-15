@@ -132,12 +132,14 @@ public class Client {
   private static void addFile(String category, String outgoingFile){
 
     //Opens the given file and reads the content
+    // perhaps use a string builder instead
     String dataToBeSent = "";
     try{
       File file = new File(outgoingFile);
       Scanner fileReader = new Scanner(file);
       while(fileReader.hasNextLine()){
-      dataToBeSent += fileReader.nextLine();
+        dataToBeSent += fileReader.nextLine();
+        dataToBeSent += "\r\n";
       }
     }
     catch(Exception e){
