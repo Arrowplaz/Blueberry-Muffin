@@ -47,11 +47,14 @@ public class Client {
     XmlRpcClient entryClient = createClient(entryPoint);
     List<String> params = new ArrayList<>();
 
-    Object[] frontEnds;
+    List<String> frontEnds = new ArrayList<String>();
     //Retrieve the list of all frontends
+
     try{
-      frontEnds = (Object[]) entryClient.execute("FrontEnd.getFrontEnds", params);
-      Object entryAsFE = entryPoint;
+      Object[] frontEndsObj = (Object[]) entryClient.execute("FrontEnd.getFrontEnds", params);
+      for (Object frontEnd : frontEndsObj){
+        frontEnds.add(frontEnd.toString());
+      }
     }
     catch(Exception e){
       System.out.println("Could not get Frontends from entry point, ensure entry point is online");
@@ -59,8 +62,7 @@ public class Client {
       return;
     }
 
-    List<Object> allFrontEnds = Arrays.asList(frontEnds);
-    allFrontEnds.add(entryPoint);
+    frontEnds.add(entryPoint);
 
     //Keep track of the 2 frontend with the best latency
     String bestFrontEnd = "";
@@ -69,27 +71,27 @@ public class Client {
     Long secondBestTime = Long.MAX_VALUE;
 
     //Iterate over all frontends
-    for(Object frontEnd: frontEnds){
+    for(String frontEnd: frontEnds){
       XmlRpcClient FEClient = createClient(frontEnd.toString());
       try{
         //Start Time
         long startTime = System.nanoTime();
         String result = (String) entryClient.execute("FrontEnd.ping", params);
-        long endTime = System.nanoTime() - startTime;
-        if(endTime < bestTime){ //Compare total time to best
+        long totalTime = System.nanoTime() - startTime;
+        if(totalTime < bestTime){ //Compare total time to best
           //Make the current best the new second best
           secondBestFrontEnd = bestFrontEnd;
           secondBestTime = bestTime;
 
           //Store the best
-          bestTime = endTime;
+          bestTime = totalTime;
           bestFrontEnd = frontEnd.toString();
         }
 
-        else if(endTime < secondBestTime){
+        else if(totalTime < secondBestTime){
           //Just replace the second best
-          secondBestTime = endTime;
-          secondBestFrontEnd = frontEnd.toString();
+          secondBestTime = totalTime;
+          secondBestFrontEnd = frontEnd;
         }
       }
       catch(Exception e){
