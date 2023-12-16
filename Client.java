@@ -8,6 +8,10 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import java.io.FileWriter;
 import java.util.*; 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.stream.*; 
 /**
  * A Java client to the online bookstore.
@@ -36,6 +40,11 @@ public class Client {
    */
   private static String secondOptimalFrontEnd = null;
 
+  /**
+   * The time in seconds between RSS calls
+   */
+  private static final int RSSTimeout = 10;
+
 
   /**
    * The region smart selection to choose the Frontend
@@ -43,7 +52,7 @@ public class Client {
    */
   private static void regionSmartSelect(){
     //Create a client to the entry point
-    System.out.println("STARTING SMART SELECT");
+    //System.out.println("STARTING SMART SELECT");
     XmlRpcClient entryClient = createClient(entryPoint);
     List<String> params = new ArrayList<>();
 
@@ -98,8 +107,8 @@ public class Client {
         System.out.println("Could not ping Front End: " + frontEnd);
       }
     }
-    System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
-    System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
+    // System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
+    // System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
     optimalFrontEnd = bestFrontEnd;
     secondOptimalFrontEnd = secondBestFrontEnd;
   }
@@ -291,19 +300,18 @@ public class Client {
     entryPoint = args[0];
     
     //Identify the best Frontend for this user
-    regionSmartSelect();
-    //Track time of last region smart select
-    long lastRSS = System.currentTimeMillis();
+    Runnable helloRunnable = new Runnable() {
+    public void run() {
+        regionSmartSelect();
+      }
+    };
+    
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+    executor.scheduleAtFixedRate(helloRunnable, 0, RSSTimeout, TimeUnit.SECONDS);
+    
     
     //Take in commands from the user
      while(true){
-      long currentTime = System.currentTimeMillis();
-      //See if 5 minutes have passed last RSS
-      if((currentTime - lastRSS) / 1000.0 > 300){ //The divide by 1000 converts MS to seconds, then compare to 300
-        lastRSS = System.currentTimeMillis();
-        regionSmartSelect();
-      }
-
       Scanner Scanner = new Scanner(System.in);  // Create a Scanner object
       System.out.println("Enter Function and Parameters");
 
@@ -348,7 +356,6 @@ public class Client {
     }
 
 
-    
   }
 }
 
