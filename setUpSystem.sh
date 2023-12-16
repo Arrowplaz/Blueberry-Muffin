@@ -48,7 +48,7 @@ sleep 2
 ##Connect DB to FE respectivley
 #/cloneOnMachine.sh 107.23.192.217 #Virginia
 #/cloneOnMachine.sh 54.204.131.69
-./runDatabase.sh 15.152.54.178 3.128.204.116 &
+./runDatabase.sh 34.228.197.147 3.128.204.116 &
 ./runDatabase.sh 54.204.131.69 3.128.204.116 &
 
 #./cloneOnMachine.sh 13.114.101.52 #Tokyo

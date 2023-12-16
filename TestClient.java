@@ -36,14 +36,15 @@ public class TestClient {
    */
   private static String secondOptimalFrontEnd = null;
 
-  private static String numberRequests;
-
-  private static int nanoSecondsInMili = 1000000;
   /**
-   * The time in seconds between RSS calls
+   * Converting form nano to miliseconds
    */
-  private static final int RSSTimeout = 10;
+  private static int nanoSecondsInMili = 1000000;
 
+   /**
+    * hardedcoded categories for testing. Allows for adds to be adding accross the whole system,
+    * not just directed at one (or a few) databases
+    */
   private static String[] categories = new String[]{"third", "first", "classics", "BIG",
     "gutenberg", "fantasy", "BIG", "news", "horror", "thriller", "mystery", "random"};
 
@@ -51,6 +52,10 @@ public class TestClient {
   
   private static String selectType;
 
+  /**
+   * Used to compare smart select vs random (or dumb select). chooses
+   * a front end randomly
+   */
   private static void regionDumbSelect(){
     XmlRpcClient entryClient = createClient(entryPoint);
     List<String> params = new ArrayList<>();
@@ -73,8 +78,6 @@ public class TestClient {
 
     optimalFrontEnd = frontEnds.get(rand.nextInt(frontEnds.size()));
     secondOptimalFrontEnd = frontEnds.get(rand.nextInt(frontEnds.size()));
-    // System.out.println("OPTIMAL FE CHOSEN: " + optimalFrontEnd);
-    // System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondOptimalFrontEnd);
     return;
   }
 
@@ -115,9 +118,12 @@ public class TestClient {
       XmlRpcClient FEClient = createClient(frontEnd.toString());
       try{
         //Start Time
+        System.out.println(frontEnd);
         long startTime = System.nanoTime();
         String result = (String) entryClient.execute("FrontEnd.ping", params);
+        System.out.println(result);
         long totalTime = System.nanoTime() - startTime;
+        System.out.println(totalTime/nanoSecondsInMili);
         if(totalTime < bestTime){ //Compare total time to best
           //Make the current best the new second best
           secondBestFrontEnd = bestFrontEnd;
@@ -138,8 +144,8 @@ public class TestClient {
         System.out.println("Could not ping Front End: " + frontEnd);
       }
     }
-    // System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
-    // System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
+    System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
+    System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
     optimalFrontEnd = bestFrontEnd;
     secondOptimalFrontEnd = secondBestFrontEnd;
   }
@@ -165,13 +171,12 @@ public class TestClient {
   }
 
   /**
-   * The client side method to start the adding file process
+   * The client side method to start the adding file process, altered
+   * to test how long it takes for RPC calls to addFile
    * @param category The category the file belongs to
    * @param outgoingFile The file itself
    */
   private static void addFile(String category, String outgoingFile){
-    //Opens the given file and reads the content
-    // perhaps use a string builder instead
     StringBuilder dataToBeSent = new StringBuilder();
 
     try{
@@ -225,21 +230,133 @@ public class TestClient {
     long totalTime = System.nanoTime() - startTime;
     // might move this to elsewhere later;
     System.out.println(totalTime/nanoSecondsInMili + "\n");
+ }
+
+
+
+  private static void continuedLookup(String category, String fileName){
+    XmlRpcClient client = createClient(optimalFrontEnd);
+    List<String> params = new ArrayList<>();
+    params.add(category);
+    params.add(fileName);
+
+    // System.out.println(Category);
+    // System.out.println(fileName);
+
+    // System.out.println(fileName);
+    while (true) {
+        long startTime = System.nanoTime();
+        try{
+        String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
+        //We are going to assume that a request for a nonexistent file will never come in
+        //DOUBLE CHECK THIS
+        // this only 
+        if(fileContents.length() == 0){
+            //This should cause the drop into the catch block, which will make the db go to another region
+            throw new Error("Did not recieve file");
+        }
+        else if (fileContents.length() == 1) {
+            System.out.println("File does not exist");
+            return;
+        }
+        //Makes a file object using the given name
+        File recievedFile = new File(fileName);
+
+        //If an outdated version exists, delete it
+        long totalTime = System.nanoTime() - startTime;
+        Thread.sleep(1000);
+        System.out.println(totalTime/nanoSecondsInMili);
+        //   System.out.println(totalTime/nanoSecondsInMili + "\n");
+    }
+    catch(Exception e){
+      //If there is no backup frontEnd, fail
+      if(secondOptimalFrontEnd == null){
+          System.err.println("Both regions down, try another entry point..." + e);
+          return;
+        }
+      //If there is, replace optimal with backup and try again
+      else{
+        //This block can be hit by either a FE error or a DB error
+        optimalFrontEnd = secondOptimalFrontEnd;
+        secondOptimalFrontEnd = null;
+        System.out.println("CHANGING FRONTEND");
+        continuedLookup(category, fileName);
+      }
+    }
+    }
+  }
+
+  private static void continuedAdd(String category, String fileName) {
+    //Opens the given file and reads the content
+    // perhaps use a string builder instead
+    StringBuilder dataToBeSent = new StringBuilder();
+
+    try{
+      File file = new File(fileName);
+      Scanner fileReader = new Scanner(file); 
+      while(fileReader.hasNextLine()){
+        dataToBeSent.append(fileReader.nextLine());
+        dataToBeSent.append("\r\n");
+      }
+    }
+    catch(Exception e){
+      //If we couldnt read the file, stop the command
+      System.out.println("Could not open and/or read Filepath: " + fileName);
+      return;
     }
 
+    if(dataToBeSent.length() == 0){
+      System.out.println("Specified File has no contents. Aborting");
+      return;
+    }
+
+    XmlRpcClient client = createClient(optimalFrontEnd);
+    // start timing here, when the data has been loaded
+    List<String> params = new ArrayList<String>();
+
+    params.add(category); //Category of the file
+    params.add(fileName); //Name of the file
+    params.add(dataToBeSent.toString()); //Contents of the file
+    params.add("YES"); 
+    
+    while(true) {
+        long startTime = System.nanoTime();
+        try{
+            // System.out.println("about to execute");
+            Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
+            if(!result){
+                System.out.println("Failed to add");
+            }
+        }
+        catch(Exception e){
+            if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
+                System.err.println("Client exception: " + e);
+                return;
+            }
+            else{
+                optimalFrontEnd = secondOptimalFrontEnd;
+                secondOptimalFrontEnd = null;
+                addFile(category, "gatsby");
+            }
+        }
+        long totalTime = System.nanoTime() - startTime;
+        // might move this to elsewhere later;
+        System.out.println(totalTime/nanoSecondsInMili + "\n");
+    }
+}
   /**
    * The clientside method to start the lookup process
    * Prints the results in the console
    * @param Category The category being looked up
    */
-  private static void lookupFile(String Category, String Filename){
+  private static void lookupFile(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
-    params.add(Category);
-    params.add(Filename);
+    params.add(category);
+    params.add(fileName);
 
-    // System.out.println(Category);
-    // System.out.println(Filename);
+    // System.out.println(category);
+    // System.out.println(fileName);
     long startTime = System.nanoTime();
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
@@ -255,7 +372,7 @@ public class TestClient {
         return;
       }
       //Makes a file object using the given name
-      File recievedFile = new File(Filename);
+      File recievedFile = new File(fileName);
 
       //If an outdated version exists, delete it
       if(recievedFile.exists()){
@@ -269,7 +386,7 @@ public class TestClient {
       recievedFile.createNewFile();
 
       //Write the contents to the file
-      FileWriter fileWriter = new FileWriter(Filename);
+      FileWriter fileWriter = new FileWriter(fileName);
     //   System.out.println((int)fileContents.charAt(1));
       fileWriter.write(fileContents.substring(1));
       fileWriter.close();
@@ -286,39 +403,11 @@ public class TestClient {
         optimalFrontEnd = secondOptimalFrontEnd;
         secondOptimalFrontEnd = null;
         System.out.println("CHANGING FRONTEND");
-        lookupFile(Category, Filename);
+        lookupFile(category, fileName);
       }
     }
   }
-
-
-  private static void deleteFile(String category, String fileName){
-    XmlRpcClient client = createClient(optimalFrontEnd);
-    List<String> params = new ArrayList<String>();
-    params.add(category);
-    params.add(fileName);
-    params.add("YES");
-
-    try{
-      Boolean result = (Boolean) client.execute("FrontEnd.deleteItem", params.toArray());
-      if(result){
-        System.out.println("File: " + fileName + " was Sucessfully deleted from System"); 
-      }
-    }
-    catch(Exception e){
-      if(optimalFrontEnd == null && secondOptimalFrontEnd == null){
-        System.err.println("Client exception: " + e);
-        return;
-      }
-      else{
-        optimalFrontEnd = secondOptimalFrontEnd;
-        secondOptimalFrontEnd = null;
-        deleteFile(category, fileName);
-      }
-    }
-  }
-
-
+  
   /**
    * The main method
    * @param args
@@ -347,6 +436,10 @@ public class TestClient {
         case "lookup":
           lookupFile(category, "gatsby.txt");
           break;
+        
+        case "continuedLookup":
+            continuedLookup("classics", "gatsby.txt");
+            break;
 
         case "add":
           // test adds for a 399 kb file
@@ -354,14 +447,9 @@ public class TestClient {
           addFile(category, "gatsby.txt");
           break;
         
-        case "delete":
-          if(args.length != 3){
-            System.out.println("deleteFile Usage: [Category] [File]");
+        case "continuedAdd":
+            continuedAdd("classics", "gatsby.txt");
             break;
-          }
-          deleteFile(args[1], args[2]);
-          break;
-
         default:
           System.out.println("Invalid function name");
           System.out.println("Functions: lookup, addFile, deleteFile");

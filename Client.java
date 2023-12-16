@@ -330,9 +330,9 @@ public class Client {
       }
       else{
           switch(cmdLineParse[0]){
-        case "lookup":
+        case "lookupFile":
           if(cmdLineParse.length != 3){
-            System.out.println("lookup Usage: [Category] [Filename]");
+            System.out.println("lookupFile Usage: [Category] [Filename]");
           }
           lookupFile(cmdLineParse[1], cmdLineParse[2]);
           break;
@@ -355,7 +355,7 @@ public class Client {
 
         default:
           System.out.println("Invalid function name");
-          System.out.println("Functions: lookup, addFile, deleteFile");
+          System.out.println("Functions: lookupFile, addFile, deleteFile");
           System.out.println("Please try again");
           // removed return here, we might want it back
       }

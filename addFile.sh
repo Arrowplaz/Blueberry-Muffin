@@ -6,7 +6,7 @@ echo
 counter=0
 while [ $counter -le 50 ]
 do
-    java -cp /usr/share/java/xmlrpc-client.jar:/usr/share/java/xmlrpc-server.jar:/usr/share/java/xmlrpc-common.jar:/usr/share/java/ws-commons-util.jar:/usr/share/java/commons-logging.jar:. TestClient 54.169.70.132 add smart &
+    java -cp /usr/share/java/xmlrpc-client.jar:/usr/share/java/xmlrpc-server.jar:/usr/share/java/xmlrpc-common.jar:/usr/share/java/ws-commons-util.jar:/usr/share/java/commons-logging.jar:. TestClient 107.23.192.217 add smart &
     ((counter++))
 done
 

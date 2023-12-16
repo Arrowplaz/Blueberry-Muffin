@@ -27,9 +27,6 @@ import java.nio.file.Paths;
  * front end servers and other databases
  */
 public class DatabaseServer { 
-
-//  private static Map<String, ArrayList<String>> database = new HashMap<String, ArrayList<String>>();
-  
   /**
    * The port number being used
    * Standardized across our project
@@ -126,9 +123,8 @@ public class DatabaseServer {
   public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
-
-    synchronized(objectLock) {
-      
+    // synrchronize on an object lock
+    synchronized(objectLock) {    
       if(!Files.exists(Paths.get(workingDir + "/Database/" + category)) || 
       !Files.isDirectory(Paths.get(workingDir + "/Database/" + category))){
         File categoryDir = new File(filePath);
@@ -179,7 +175,7 @@ public class DatabaseServer {
    * 
    * @param databaseIp the IP of where the data is being sent
    * @param category the category of data being sent
-   * @param delete the string "yes" or "no" indicating whether or not the data should be deleted
+   * @param delete the string "YES" or "NO" indicating whether or not the data should be deleted
    * 
    * @return true for success false for failure
    */
@@ -225,7 +221,7 @@ public class DatabaseServer {
   }
 
   /**
-   * A method to delete an item from the database
+   * A method to delete an item from the databasea
    * 
    * @param category the category of the file being deleted
    * @param fileName the file's name
@@ -251,6 +247,7 @@ public class DatabaseServer {
         synchronized(objectLock){
           categoryFile.delete();
         }
+        // if it's the last file of that category, tell the frontEndt
         return "delete";
       }
       

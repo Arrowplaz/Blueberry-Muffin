@@ -101,7 +101,6 @@ public class FrontEndServer {
     try {
       XmlRpcClient client = createClient(oldDb);
       List<String> params = new ArrayList<String>();
-      // databaseIp and category
       params.add(newDb);
       params.add(category);
       params.add(delete);
@@ -112,25 +111,24 @@ public class FrontEndServer {
       System.out.println("Find it there from now on!");
     }
     catch(Exception e) {
-      // will be used to send twice
       System.out.println("(FronEnd, repartition) Client exception" + e);
     }
 
   }
 
   /**
-   * A helper to repartion when multiple databases fail
+   * A helper to repartion when both databases responsible for a category
+   * fails
    * 
    * @param hashesToRemove an array of hashes that need to be removed
    */
   private void removeRepartition(int[] hashesToRemove) {
     ArrayList<String> newDatabases = new ArrayList<String>(databases);
     ArrayList<String> liveCategories = new ArrayList<String>();
-    // fix this, remove the actual elements not the indices this fucks 
-    // it up
+    // remove bad machines
     newDatabases.remove(databases.get(hashesToRemove[0]));
     newDatabases.remove(databases.get(hashesToRemove[1]));
-    // you remove the last two databases
+    
     synchronized(repartitionNeeded) {
       repartitionNeeded = false;
     }
@@ -150,28 +148,23 @@ public class FrontEndServer {
       int[] prevHashes = hash(category, databases.size());
       int[] newHashes = hash(category, databases.size() - hashesToRemove.length);
       System.out.println("Looking at this cateogry: " + category);
-      System.out.println("(" + prevHashes[0] + ", " + prevHashes[1] +")");
-      System.out.println("(" + newHashes[0] + ", " + newHashes[1] +")");
-      //(0, 2) --> (0, 0))
-      System.out.println("Hashes remove: " + "(" + hashesToRemove[0] + ", " + hashesToRemove[1] +")");
-      //(0, 1) removed
+      System.out.println("Old hash: (" + prevHashes[0] + ", " + prevHashes[1] +")");
+      System.out.println("New Hash: (" + newHashes[0] + ", " + newHashes[1] +")");
 
-      //(1, 2) where 
-      // if this category doesn't exist in the databases
+      // if category doesn't exist, don't add it to live categories
       if (prevHashes[0] == hashesToRemove[0] && prevHashes[1] == hashesToRemove[1]) {
         continue;
       }
       // the category exists on at least one machine
       liveCategories.add(category);
-      System.out.println("category still in system: " + category);
      
       if (newDatabases.size() == 1){
-        // no need to send data, it needs all it can get
+        // no need to send data anywhere if there's only one db
         continue;
       }
        // if the first machine is down
       if(prevHashes[0] == hashesToRemove[0] || prevHashes[0] == hashesToRemove[1]) {
-        // second machine send categories to these new machines
+        // second machine, send categories to these new machines
         // if the second machine is down, give up, can't take care of all failures
         // only delete the category on your second send
         if (prevHashes[1] != newHashes[0]) {
@@ -182,17 +175,20 @@ public class FrontEndServer {
         }
 
       }
-
+      // if the second machine was down
       if(prevHashes[1] == hashesToRemove[0] || prevHashes[1] == prevHashes[1]) {
         // first machine you send categories to these new machines
         if (prevHashes[0] != newHashes[0]) {
           repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "NO"); 
         }
+
         if (prevHashes[0] != newHashes[1]) {
           repartitionHelper(newDatabases, prevHashes[0], newHashes[1], category, "YES");
         }
       }
       else {
+        // else, both machines send your categories to the new hash and delete your folders
+        // to make capacity
         if (prevHashes[0] != newHashes[0]) {
           repartitionHelper(newDatabases, prevHashes[0], newHashes[0], category, "YES"); 
         }
@@ -201,7 +197,6 @@ public class FrontEndServer {
         }
       }
     }
-    // needs old 
     System.out.println("printing new categories list...");
     synchronized(categories) {
       categories = new ArrayList<String>(liveCategories);
@@ -224,8 +219,6 @@ public class FrontEndServer {
       int[] oldHashes = hash(category, databases.size() - 1);
       int[] newHashes = hash(category, databases.size());
 
-      // if they are the same for some reason
-      // this shouldn't happen but just in case
       if (oldHashes.equals(newHashes)) {
         continue; 
       }
@@ -234,7 +227,7 @@ public class FrontEndServer {
         // if the first two aren't the same
         int oldHash = oldHashes[j];
         int newHash = newHashes[j];
-        // if this hash is one of the new hashes, no need to add categories
+        // if this hash is one of the new hashes, no need to delete the category folder
         if (oldHash == newHashes[0] || oldHash == newHashes[1]) {
           // send over if it's different
           if (oldHash != newHash) {
@@ -253,12 +246,8 @@ public class FrontEndServer {
   // hash function, is send string to hash ---> hash sends out 
   public int[] hash(String category, int numMachines){
     // need a hash that spits out 2 numbers modded over the number of machines
-    System.out.println("Inside hash function");
-    System.out.println("Category: " + category);
     int hash1 = Math.abs(category.hashCode());
-    System.out.println("result of first hash: " + hash1);
     int hash2 = hash1 + 1;
-    System.out.println(hash1%numMachines + " " + hash2%numMachines);
     int[] hashes = {hash1%numMachines, hash2%numMachines};
 
     return hashes;
@@ -273,7 +262,6 @@ public class FrontEndServer {
     System.out.println(ipAddress + " wants to be added");
     // check if database already in 
     if (databases.contains(ipAddress)){
-      // might want to just return true here
       return false;
     }
     System.out.println("about to add Database");
@@ -290,8 +278,8 @@ public class FrontEndServer {
    * The method to delete an item from the region
    * 
    * @param category the category of the item
-   * @param fileName the filename
-   * @param leader a string indicating whether or not this is a leader, "Yes" or "No"
+   * @param fileName the filenam
+   * @param leader a string indicating whether or not this is a leader, "YES" or "NO"
    * 
    * @return true if successful or false if not
    */
@@ -346,12 +334,10 @@ public class FrontEndServer {
     return true;
   }
   
-  // returns are strings because there are three possible 
-  // reasons why since this is combination of the three.
-  // either adding failed or succeeded, or there was a repartition
-  // similarly for removes, if the file did not exist
+
   /**
    * A helper that does both adds and deletes, checks if both replications are down to repartition
+   * 
    * 
    * @param method the method occuring
    * @param category the category of the file
@@ -366,15 +352,11 @@ public class FrontEndServer {
     int index2 = hashes[1];
     String[] dbs = {databases.get(index1), databases.get(index2)};
     Boolean firstOffline = false;
-
-    System.out.println("This is the database chosen 1: " + dbs[0]);
-    System.out.println("This is the database chosen 2: " + dbs[1]);
-
+    // loop though databases
     for (int i = 0; i < dbs.length; i++) {
       // if you only have one database for some reason, then only add once
       // since hash will spit out (0, 0)
       if (i == 1 && index1 == index2 && !firstOffline) {
-        System.out.println("first return in addDeleteHelper");
         return "true";
       }
       // if your one database is offline, return false
@@ -385,7 +367,6 @@ public class FrontEndServer {
           databases = new ArrayList<String>();
           categories = new ArrayList<String>();
         }
-        System.out.println("Second return in addDeleteHelper");
         // offline
         return "false";
       }
@@ -394,7 +375,6 @@ public class FrontEndServer {
       XmlRpcClient client = createClient(db);
 
       try {
-        // think about returns here
         if (method.equals("delete")) {
           String result = (String) client.execute("Database.deleteItem", params.toArray());
           if(result.equals("false")){
@@ -431,6 +411,8 @@ public class FrontEndServer {
           }
           // synchronize such that only one process can come to this at
           // a time
+          // to avoid race conditions where two clients try to
+          // reparition at the same tike
           synchronized (repartitionNeeded) {
             if (repartitionNeeded) {
               removeRepartition(hashes);
@@ -452,8 +434,6 @@ public class FrontEndServer {
    * @param leader "Yes" or "No" depending on if it is a leader
    */
   public Boolean addItem(String category, String fileName, String contents, String leader){
-    // this couldn't be synchronize fucked right
-
     if (databases.size() == 0){
       return false; 
     }
@@ -485,9 +465,9 @@ public class FrontEndServer {
 
     System.out.println("About to add items to other FrontEnds");
     System.out.println("otherFrontEnds size: " + otherFrontEnds.size());
-    //leading to concurrency modication errors, so placing synchronized
-    // synchronized(otherFrontEnds) {
+
     params.add("NO");
+    // using for int i loop to avoid iterator concurrency issues
     for (int i = 0; i < otherFrontEnds.size(); i ++) {
       String frontEndIp = otherFrontEnds.get(i);
       System.out.println("Adding item to FE: + " + frontEndIp);
@@ -555,14 +535,14 @@ public class FrontEndServer {
   }
 
   /**
-   * A method called by a new Front end to add itself to the region
+   * A method by a frontEnd to add other frontEnds. Called by acceptFrontEnd
+   * to update every other machine of a new frontEnd joiing.
    * 
    * @param ipAddress the address of the new frontend
    * 
    * @return true if successful or false if not
    */
   public Boolean addFrontEnd(String ipAddress) {
-    // failure case: when the ipAddress already exists?
     otherFrontEnds.add(ipAddress);
     System.out.println("(add FrontEnd, Amount of frontEnds now: " + otherFrontEnds.size());
     return true;
@@ -608,7 +588,7 @@ public class FrontEndServer {
   // }
 
   /**
-   * A helper method called at startup to join an existing front end within the system
+   * A helper method called at startup to join the system from an existing frontEnd
    * 
    * @param froneEndIp my own IP address
    * @param entryPoint the entry point IP address
@@ -616,13 +596,12 @@ public class FrontEndServer {
    * @return true if successful or false if not
    */
   private static Boolean joinFrontEnd(String frontEndIp, String entryPoint) {
-    // RPC call to accept frontEnds
-    // needs to send its IP and the entryPoint IP
     XmlRpcClient client = createClient(entryPoint);
     List<String> params = new ArrayList<String>();
     params.add(frontEndIp);
 
     try{
+      // gets list of other frontEnds from FrontEnd
       Object[] otherFE = (Object[]) client.execute("FrontEnd.acceptFrontEnd", params);
       if (otherFE != null) {
         // add frontEnds to your frontEnds
@@ -631,7 +610,7 @@ public class FrontEndServer {
           System.out.println(frontEnd);
           otherFrontEnds.add(frontEnd.toString());
         }
-      // then add the IP to your own frontEnd
+      // then add the IP to your own frontEndb
       otherFrontEnds.add(entryPoint);
       }
       return true;
