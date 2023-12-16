@@ -190,7 +190,6 @@ public class DatabaseServer {
       for (String file: files) {
         // get the file path and send it over to getfile contents,
         String fileContents = getFileContents(categoryPath + "/" + file);
-        System.out.println("Here are the file contents: " + fileContents);
         XmlRpcClient client = createClient(databaseIp);
         List<String> params = new ArrayList<String>();
         params.add(category);

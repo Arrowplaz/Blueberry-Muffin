@@ -140,7 +140,7 @@ public class Client {
    * @param category The category the file belongs to
    * @param fileName The path of the file
    */
-  private static void addFile(String category, String fileName){
+  private static void addItem(String category, String fileName){
 
     //Opens the given file and reads the content
     // perhaps use a string builder instead
@@ -188,7 +188,7 @@ public class Client {
         else{
           optimalFrontEnd = secondOptimalFrontEnd;
           secondOptimalFrontEnd = null;
-          addFile(category, fileName);
+          addItem(category, fileName);
         }
       }
     }
@@ -198,7 +198,7 @@ public class Client {
    * Prints the results in the console
    * @param category The category being looked up
    */
-  private static void lookupFile(String category, String fileName){
+  private static void lookup(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
     params.add(category);
@@ -231,7 +231,6 @@ public class Client {
 
       //Write the contents to the file
       FileWriter fileWriter = new FileWriter(fileName);
-      System.out.println((int)fileContents.charAt(1));
       fileWriter.write(fileContents.substring(1));
       fileWriter.close();
 
@@ -249,7 +248,7 @@ public class Client {
         optimalFrontEnd = secondOptimalFrontEnd;
         secondOptimalFrontEnd = null;
         System.out.println("CHANGING FRONTEND");
-        lookupFile(category, fileName);
+        lookup(category, fileName);
       }
     }
   }
@@ -325,19 +324,19 @@ public class Client {
       }
       else{
           switch(cmdLineParse[0]){
-        case "lookupFile":
+        case "lookup":
           if(cmdLineParse.length != 3){
-            System.out.println("lookupFile Usage: [Category] [Filename]");
+            System.out.println("lookup Usage: [Category] [Filename]");
           }
-          lookupFile(cmdLineParse[1], cmdLineParse[2]);
+          lookup(cmdLineParse[1], cmdLineParse[2]);
           break;
 
-        case "addFile":
+        case "addItem":
           if(cmdLineParse.length != 3){
-            System.out.println("addFile Usage: [Category] [File]");
+            System.out.println("addItem Usage: [Category] [File]");
             break;
           }
-          addFile(cmdLineParse[1], cmdLineParse[2]);
+          addItem(cmdLineParse[1], cmdLineParse[2]);
           break;
         
         case "deleteFile":
@@ -350,7 +349,7 @@ public class Client {
 
         default:
           System.out.println("Invalid function name");
-          System.out.println("Functions: lookupFile, addFile, deleteFile");
+          System.out.println("Functions: lookup, addItem, deleteFile");
           System.out.println("Please try again");
           // removed return here, we might want it back
         }
