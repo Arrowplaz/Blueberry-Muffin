@@ -153,17 +153,13 @@ public class DatabaseServer {
           FileWriter writer = new FileWriter(filePath + "/" + fileName);
           writer.write(contents);
           writer.close();
-          return true;
-        }
-        else{
-          //File already exists
-          return false;
         }
       }catch(Exception e){
         System.out.println("Database Error: " + e);
         return false;
       }
     }
+    return true;
   }
 
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
