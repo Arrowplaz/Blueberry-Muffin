@@ -13,8 +13,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.*; 
+
 /**
- * A Java client to the online bookstore.
+ * A Java client for THE Blueberry Muffin :) 
  */
 public class Client {
   /**
@@ -163,8 +164,6 @@ public class Client {
       return;
     }
 
-     
-
       XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<String>();
       params.add(category); //Category of the file
@@ -210,9 +209,7 @@ public class Client {
 
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
-      //We are going to assume that a request for a nonexistent file will never come in
-      //DOUBLE CHECK THIS
-      // this only 
+      // fileContents are prepended with an error code
       if(fileContents.length() == 0){
         //This should cause the drop into the catch block, which will make the db go to another region
         throw new Error("Did not recieve file");
@@ -290,7 +287,6 @@ public class Client {
     }
   }
 
-
   /**
    * The main method
    * @param args
@@ -316,7 +312,6 @@ public class Client {
     
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     executor.scheduleAtFixedRate(RSSRunnable, 0, RSSTimeout, TimeUnit.SECONDS);
-    
     
     //Take in commands from the user
      while(true){
@@ -358,12 +353,9 @@ public class Client {
           System.out.println("Functions: lookupFile, addFile, deleteFile");
           System.out.println("Please try again");
           // removed return here, we might want it back
-      }
-      }
-      
+        }
+      }      
     }
-
-
   }
 }
 

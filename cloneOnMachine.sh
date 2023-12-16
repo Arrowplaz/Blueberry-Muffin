@@ -1,6 +1,6 @@
 #!/bin/bash
 clear
-echo "---------Starting Test 3---------" 
+echo "---------Cloing machines---------" 
 
 ipAddress=$1
 cd ../

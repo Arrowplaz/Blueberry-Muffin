@@ -10,7 +10,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.*; 
 /**
- * A Java client to the online bookstore.
+ * A java Test client to Test Blueberry muffin for scabillity,
+ * smart select, and fault tolerance. 
  */
 public class TestClient {
   /**
@@ -233,6 +234,13 @@ public class TestClient {
  }
 
 
+  /**
+   * Used for fault tolerance of getting rid of a frontEnd, and then taking out optimal
+   * frontEnd. Ideally, we should see a small spike in latency.
+   * 
+   * @param category The category the file belongs to
+   * @param fileName The file itself
+   */
 
   private static void continuedLookup(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
@@ -240,10 +248,6 @@ public class TestClient {
     params.add(category);
     params.add(fileName);
 
-    // System.out.println(Category);
-    // System.out.println(fileName);
-
-    // System.out.println(fileName);
     while (true) {
         long startTime = System.nanoTime();
         try{
@@ -285,6 +289,17 @@ public class TestClient {
     }
     }
   }
+
+  
+    /**
+   * Used for testing fault tolerance when both databases a machine goes to 
+   * are down. This test was done manually. We started with 3 databases, 
+   * and a frontEnd. We kept adding, and saw which two databases "classics"
+   * mapped to, and then terminated them to see the spike in latency. 
+   * 
+   * @param category The category the file belongs to
+   * @param fileName The file itself
+   */
 
   private static void continuedAdd(String category, String fileName) {
     //Opens the given file and reads the content
@@ -339,15 +354,18 @@ public class TestClient {
                 addFile(category, "gatsby");
             }
         }
+
         long totalTime = System.nanoTime() - startTime;
-        // might move this to elsewhere later;
         System.out.println(totalTime/nanoSecondsInMili + "\n");
+        // might move this to elsewhere later;
     }
 }
   /**
    * The clientside method to start the lookup process
-   * Prints the results in the console
+   * Prints the results in the console to be used in analysis
+   * 
    * @param Category The category being looked up
+   * @param @fileName 
    */
   private static void lookupFile(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
@@ -355,14 +373,10 @@ public class TestClient {
     params.add(category);
     params.add(fileName);
 
-    // System.out.println(category);
-    // System.out.println(fileName);
+    // time the time it takes to lookup a file, will be called concurrently to test
     long startTime = System.nanoTime();
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
-      //We are going to assume that a request for a nonexistent file will never come in
-      //DOUBLE CHECK THIS
-      // this only 
       if(fileContents.length() == 0){
         //This should cause the drop into the catch block, which will make the db go to another region
         throw new Error("Did not recieve file");
@@ -454,7 +468,6 @@ public class TestClient {
           System.out.println("Invalid function name");
           System.out.println("Functions: lookup, addFile, deleteFile");
           System.out.println("Please try again");
-          // removed return here, we might want it back
       }
   }
 }

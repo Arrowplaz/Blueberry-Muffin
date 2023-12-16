@@ -280,8 +280,6 @@ public class DatabaseServer {
     }
   }
 
-  
-
   /**
    * The main method
    */
@@ -311,7 +309,6 @@ public class DatabaseServer {
     } catch (Exception e) {
       System.err.println("Server exception: " + e);
     }
-    
 
     if (joinDatabase(args[0], args[1])) {
       System.out.println("Successfully joined front-end with entry point: " + args[1]);

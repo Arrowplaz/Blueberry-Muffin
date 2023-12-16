@@ -1,6 +1,6 @@
 #!/bin/bash
 clear
-echo "---------Starting Test 3---------" 
+echo "---------Setting Up BLUEBERRY MUFFFFFFFIIIIN---------" 
 
 ./killServers.sh
 # ireland
