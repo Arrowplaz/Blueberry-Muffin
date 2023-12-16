@@ -43,7 +43,7 @@ public class Client {
   /**
    * The time in seconds between RSS calls
    */
-  private static final int RSSTimeout = 10;
+  private static final int RSSTimeout = 300;
 
 
   /**
@@ -107,8 +107,8 @@ public class Client {
         System.out.println("Could not ping Front End: " + frontEnd);
       }
     }
-    // System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
-    // System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
+    System.out.println("OPTIMAL FE CHOSEN: " + bestFrontEnd);
+    System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondBestFrontEnd);
     optimalFrontEnd = bestFrontEnd;
     secondOptimalFrontEnd = secondBestFrontEnd;
   }
