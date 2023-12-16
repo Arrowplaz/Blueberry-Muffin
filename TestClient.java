@@ -73,6 +73,8 @@ public class TestClient {
 
     optimalFrontEnd = frontEnds.get(rand.nextInt(frontEnds.size()));
     secondOptimalFrontEnd = frontEnds.get(rand.nextInt(frontEnds.size()));
+    // System.out.println("OPTIMAL FE CHOSEN: " + optimalFrontEnd);
+    // System.out.println("SECOND OPTIMAL FE CHOSEN: " + secondOptimalFrontEnd);
     return;
   }
 
@@ -162,7 +164,6 @@ public class TestClient {
     return client;
   }
 
-
   /**
    * The client side method to start the adding file process
    * @param category The category the file belongs to
@@ -204,6 +205,7 @@ public class TestClient {
     
     long startTime = System.nanoTime();
     try{
+        // System.out.println("about to execute");
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
         if(!result){
             System.out.println("Failed to add");
@@ -332,6 +334,7 @@ public class TestClient {
     selectType = args[2];
     //Identify the best Frontend for this user
     if (selectType.equals("smart")) {
+        System.out.println("IN SMART");
         regionSmartSelect();
     }
     else {
