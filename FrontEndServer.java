@@ -14,30 +14,30 @@ import java.util.Scanner;
 /**
  * The Front End Server of the project
  */
-public class FrontEndServer { 
-  // The FrontEnd needs to
-  // Concerns: what happens when we are adding two databases at the same time --> don't make it concurrent
-  // 1. be able to add frontEnd servers, add FrontEnd to known IP flow (ip --> FE --> sends message to ip) - 
-  // unsure what the flow should be 
-  // 2. add databases to regions
-  // 3. send files to databases
-  // FrontEnd server information 
-  // 4. repartition machines once there are more databases
-
-  // Testing things in the FrontEnd: 
-  // 1. how the hashfunction is/how evenly spread
-  // 2. smart latency
-  // 3. fault tolerance 
-  // What do we want to see?
-  
-  // list machines to the genre they are in charge of
+public class FrontEndServer {   
+  /**
+   * The list of categories in the region
+   */
   private static ArrayList<String> categories = new ArrayList<String>();
-  // instead have a hashfunction with the number of databases
+
+  /**
+   * The list of databases withing the region
+   */
   private static ArrayList<String> databases = new ArrayList<>();
+
+  /**
+   * A list of the other frontends in the system
+   */
   private static ArrayList<String> otherFrontEnds = new ArrayList<>();
+
+  /**
+   * A boolean to tell if repartioning is needed
+   */
   private static Boolean repartitionNeeded = false;
-  // variable so that heap space is not overwhelmed by the amount of
-  // requests coming in
+  
+  /**
+   * The magic number for the port; standardized across the project
+   */
   private static final int PORTNUMBER = 8413;
 
 
@@ -68,8 +68,7 @@ public class FrontEndServer {
   /**
    * The helper method to create a client
    * 
-   * @param hostName: hostname of the client
-   * @param portNum: the portnum of the client
+   * @param ip The ip address for the client
    * 
    * @return the client
    */
@@ -86,7 +85,15 @@ public class FrontEndServer {
     return client;
   }
 
-  // Helper for remove repartioning, which happens on addFiles
+  /**
+   *  Helper for remove repartioning, which happens on addFiles
+   * 
+   * @param newDatabases the list of new Databases
+   * @param oldHash the old database hash
+   * @param newHash the new has number
+   * @param category the category being moved
+   * @param delete a string whether or not to delete, "Yes" or "No"
+   */
   private void repartitionHelper(List<String> newDatabases, int oldHash, int newHash, String category, String delete) {
     String oldDb = databases.get(oldHash);
     String newDb = newDatabases.get(newHash);
@@ -111,11 +118,11 @@ public class FrontEndServer {
 
   }
 
-  /*
-   * ok so 1. get the new partitions, and get the live databases 
-   * from newdatabase so that 
+  /**
+   * A helper to repartion when multiple databases fail
+   * 
+   * @param hashesToRemove an array of hashes that need to be removed
    */
-  // only trigered when 2 databases are removed
   private void removeRepartition(int[] hashesToRemove) {
     ArrayList<String> newDatabases = new ArrayList<String>(databases);
     ArrayList<String> liveCategories = new ArrayList<String>();
@@ -205,6 +212,9 @@ public class FrontEndServer {
     }   
   }
 
+  /**
+   * A method to repartion when a DB joins
+   */
   private void addRepartion(){
     // go through categories
     for (int i = 0; i < categories.size(); i++) {
@@ -254,6 +264,11 @@ public class FrontEndServer {
     return hashes;
   }
   
+  /**
+   * A method called by a database when joining the region
+   * 
+   * @param ipAddress the IP of the database joining
+   */
   public Boolean addDatabase(String ipAddress){
     System.out.println(ipAddress + " wants to be added");
     // check if database already in 
@@ -271,6 +286,15 @@ public class FrontEndServer {
     return true;
   }
 
+  /**
+   * The method to delete an item from the region
+   * 
+   * @param category the category of the item
+   * @param fileName the filename
+   * @param leader a string indicating whether or not this is a leader, "Yes" or "No"
+   * 
+   * @return true if successful or false if not
+   */
   public Boolean deleteItem(String category, String fileName, String leader){
     if (databases.size() == 0){
       // or a string saying add a database... ?
@@ -326,6 +350,16 @@ public class FrontEndServer {
   // reasons why since this is combination of the three.
   // either adding failed or succeeded, or there was a repartition
   // similarly for removes, if the file did not exist
+  /**
+   * A helper that does both adds and deletes, checks if both replications are down to repartition
+   * 
+   * @param method the method occuring
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * @param params the params for the method being called
+   * 
+   * @return "true" or "false" or "repartition" depending on success, failure, or repartition needed
+   */
   private String addDeleteHelper(String method, String category, String fileName, List<String> params) {
     int[] hashes = hash(category, databases.size());
     int index1 = hashes[0];
@@ -409,6 +443,14 @@ public class FrontEndServer {
     return "true";
   }
 
+  /**
+   * This method adds an item into the region
+   * 
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * @param contents the contents of the file
+   * @param leader "Yes" or "No" depending on if it is a leader
+   */
   public Boolean addItem(String category, String fileName, String contents, String leader){
     // this couldn't be synchronize fucked right
 
@@ -470,8 +512,13 @@ public class FrontEndServer {
     return true;
   }
 
-  /*
+  /**
+   * This method returns a file from the database
    * 
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * 
+   * @return the contens of the file as a string
    */
   public String getItem(String category, String fileName) {
     System.out.println("Size of database: " + databases.size());
@@ -507,7 +554,13 @@ public class FrontEndServer {
     } 
   }
 
-
+  /**
+   * A method called by a new Front end to add itself to the region
+   * 
+   * @param ipAddress the address of the new frontend
+   * 
+   * @return true if successful or false if not
+   */
   public Boolean addFrontEnd(String ipAddress) {
     // failure case: when the ipAddress already exists?
     otherFrontEnds.add(ipAddress);
@@ -554,6 +607,14 @@ public class FrontEndServer {
   }
   // }
 
+  /**
+   * A helper method called at startup to join an existing front end within the system
+   * 
+   * @param froneEndIp my own IP address
+   * @param entryPoint the entry point IP address
+   * 
+   * @return true if successful or false if not
+   */
   private static Boolean joinFrontEnd(String frontEndIp, String entryPoint) {
     // RPC call to accept frontEnds
     // needs to send its IP and the entryPoint IP

@@ -42,12 +42,15 @@ public class DatabaseServer {
    */
   private static String workingDir;
 
+  /**
+   * A dummy object used to run object locks
+   */
   private static Object objectLock = new Object();
-    /**
-   * The helper method to create a client
+
+  /**
+   * A helper method to create a client
    * 
-   * @param hostName: hostname of the client
-   * @param portNum: the portnum of the client
+   * @param ip: The ip Address of the client
    * 
    * @return the client
    */
@@ -65,13 +68,6 @@ public class DatabaseServer {
     return client;
   }
 
-  /**
-   * A helper method to open a file and get its contents
-   * 
-   * @param filePath the file being opened
-   * 
-   * @return the contents as a string
-   */
   /**
    * A helper method to open a file and get its contents
    * 
@@ -99,12 +95,12 @@ public class DatabaseServer {
   }
 
   /**
-   * Using a category and fileName, converts the file to a string for sendin
+   * Using a category and fileName, converts the file to a string for sending
    * 
    * @param category the category of the file
    * @param fileName the name of the file
    * 
-   * @return the contents of a file as a String
+   * @return 0 + the contents of a file as a String or 1 for failure
    */
   public String getItem(String category, String fileName) {
     String filePath = workingDir + "/Database/" + category + "/" + fileName;
@@ -118,23 +114,15 @@ public class DatabaseServer {
     }
   }
 
-  public boolean deleteFile(String category, String fileName){
-    String filePath = workingDir + "/Database/" + category + "/" + fileName;
-    if(Files.exists(Paths.get(workingDir))){
-      File currFile = new File(filePath);
-      if(currFile.delete()){
-        return true;
-      }
-      else{
-        return false;
-      }
-    }
-    else{
-      //If we couldnt find the file, should we assuming a success case?
-      return true;
-    }
-  }
-
+  /**
+   * The method to add an Item to the system
+   * 
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * @param contents the contents of the file
+   * 
+   * @return true for success false for failure
+   */
   public boolean addItem(String category, String fileName, String contents){
     String filePath = workingDir + "/Database/" + category;
 
@@ -162,6 +150,14 @@ public class DatabaseServer {
     return true;
   }
 
+  /**
+   * A helper method during startup to join a frontend
+   * 
+   * @param databaseIP the machines own IP
+   * @param entryPoint the frontend IP
+   * 
+   * @return true for success false for failure
+   */
   private static boolean joinDatabase(String databaseIp, String entryPoint) {
     XmlRpcClient client = createClient(entryPoint);
     List<String> params = new ArrayList<String>();
@@ -178,6 +174,15 @@ public class DatabaseServer {
   }
 
 
+  /**
+   * This method sends all data related to a category to another IP
+   * 
+   * @param databaseIp the IP of where the data is being sent
+   * @param category the category of data being sent
+   * @param delete the string "yes" or "no" indicating whether or not the data should be deleted
+   * 
+   * @return true for success false for failure
+   */
   public boolean sendCategory(String databaseIp, String category, String delete){
     File categoryFile = new File(workingDir + "/Database/" + category);
     Path categoryPath = categoryFile.toPath();

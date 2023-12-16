@@ -120,11 +120,11 @@ public class Client {
    * 
    * @return the client that was built
    */
-  public static XmlRpcClient createClient(String IPaddress) {
+  public static XmlRpcClient createClient(String ip) {
     XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
     XmlRpcClient client = null;
     try {
-      config.setServerURL(new URL("http://" + IPaddress + ":" + PORTNUMBER));
+      config.setServerURL(new URL("http://" + ip + ":" + PORTNUMBER));
       client = new XmlRpcClient();
       client.setConfig(config);
     } catch (Exception e) {
@@ -137,15 +137,15 @@ public class Client {
   /**
    * The client side method to start the adding file process
    * @param category The category the file belongs to
-   * @param outgoingFile The file itself
+   * @param fileName The path of the file
    */
-  private static void addFile(String category, String outgoingFile){
+  private static void addFile(String category, String fileName){
 
     //Opens the given file and reads the content
     // perhaps use a string builder instead
     StringBuilder dataToBeSent = new StringBuilder();
     try{
-      File file = new File(outgoingFile);
+      File file = new File(fileName);
       Scanner fileReader = new Scanner(file); 
       while(fileReader.hasNextLine()){
         dataToBeSent.append(fileReader.nextLine());
@@ -154,7 +154,7 @@ public class Client {
     }
     catch(Exception e){
       //If we couldnt read the file, stop the command
-      System.out.println("Could not open and/or read Filepath: " + outgoingFile);
+      System.out.println("Could not open and/or read Filepath: " + fileName);
       return;
     }
 
@@ -168,14 +168,14 @@ public class Client {
       XmlRpcClient client = createClient(optimalFrontEnd);
       List<String> params = new ArrayList<String>();
       params.add(category); //Category of the file
-      params.add(outgoingFile); //Name of the file
+      params.add(fileName); //Name of the file
       params.add(dataToBeSent.toString()); //Contents of the file
-      params.add(optimalFrontEnd); //The 'leader' frontEnd
+      params.add("YES"); //The 'leader' frontEnd
 
       try{
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
         if(result){
-          System.out.println("File: " + outgoingFile + " was Sucessfully added to System"); 
+          System.out.println("File: " + fileName + " was Sucessfully added to System"); 
         }
         else{
           System.out.println("Failed to add");
@@ -189,7 +189,7 @@ public class Client {
         else{
           optimalFrontEnd = secondOptimalFrontEnd;
           secondOptimalFrontEnd = null;
-          addFile(category, outgoingFile);
+          addFile(category, fileName);
         }
       }
     }
@@ -197,16 +197,16 @@ public class Client {
   /**
    * The clientside method to start the lookup process
    * Prints the results in the console
-   * @param Category The category being looked up
+   * @param category The category being looked up
    */
-  private static void lookupFile(String Category, String Filename){
+  private static void lookupFile(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
-    params.add(Category);
-    params.add(Filename);
+    params.add(category);
+    params.add(fileName);
 
-    // System.out.println(Category);
-    // System.out.println(Filename);
+    // System.out.println(category);
+    // System.out.println(fileName);
 
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
@@ -222,7 +222,7 @@ public class Client {
         return;
       }
       //Makes a file object using the given name
-      File recievedFile = new File(Filename);
+      File recievedFile = new File(fileName);
 
       //If an outdated version exists, delete it
       if(recievedFile.exists()){
@@ -233,12 +233,12 @@ public class Client {
       recievedFile.createNewFile();
 
       //Write the contents to the file
-      FileWriter fileWriter = new FileWriter(Filename);
+      FileWriter fileWriter = new FileWriter(fileName);
       System.out.println((int)fileContents.charAt(1));
       fileWriter.write(fileContents.substring(1));
       fileWriter.close();
 
-      System.out.println("Successfully retrieved: " + Filename);
+      System.out.println("Successfully retrieved: " + fileName);
     }
     catch(Exception e){
       //If there is no backup frontEnd, fail
@@ -252,12 +252,18 @@ public class Client {
         optimalFrontEnd = secondOptimalFrontEnd;
         secondOptimalFrontEnd = null;
         System.out.println("CHANGING FRONTEND");
-        lookupFile(Category, Filename);
+        lookupFile(category, fileName);
       }
     }
   }
 
-
+  /**
+   * This method starts the deleteFile process which deletes a file from the system
+   * 
+   * @param category the category of the file
+   * @param fileName the name of the file
+   * 
+   */
   private static void deleteFile(String category, String fileName){
     XmlRpcClient client = createClient(optimalFrontEnd);
     List<String> params = new ArrayList<>();
@@ -299,15 +305,17 @@ public class Client {
 
     entryPoint = args[0];
     
-    //Identify the best Frontend for this user
-    Runnable helloRunnable = new Runnable() {
+    /**
+     * A runnable to perform Region Smart Select Recurringly
+     */
+    Runnable RSSRunnable = new Runnable() {
     public void run() {
         regionSmartSelect();
       }
     };
     
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    executor.scheduleAtFixedRate(helloRunnable, 0, RSSTimeout, TimeUnit.SECONDS);
+    executor.scheduleAtFixedRate(RSSRunnable, 0, RSSTimeout, TimeUnit.SECONDS);
     
     
     //Take in commands from the user
