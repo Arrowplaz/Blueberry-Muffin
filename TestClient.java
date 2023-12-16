@@ -84,7 +84,7 @@ public class TestClient {
     //Create a client to the entry point
     //System.out.println("STARTING SMART SELECT");
     XmlRpcClient entryClient = createClient(entryPoint);
-    List<String> params = new ArrayList<>();
+    List<String> params = new ArrayList<String>();
 
     List<String> frontEnds = new ArrayList<String>();
     //Retrieve the list of all frontends
@@ -102,7 +102,6 @@ public class TestClient {
     }
 
     frontEnds.add(entryPoint);
-
     //Keep track of the 2 frontend with the best latency
     String bestFrontEnd = "";
     String secondBestFrontEnd = "";
@@ -204,8 +203,6 @@ public class TestClient {
     
     
     long startTime = System.nanoTime();
-    int index = rand.nextInt(categories.length);
-
     try{
         Boolean result = (Boolean) client.execute("FrontEnd.addItem", params.toArray());
         if(!result){
@@ -223,9 +220,9 @@ public class TestClient {
             addFile(category, "gatsby");
         }
     }
-    long totalTime = System.nanoTime();
+    long totalTime = System.nanoTime() - startTime;
     // might move this to elsewhere later;
-    System.out.println(totalTime/nanoSecondsInMili);
+    System.out.println(totalTime/nanoSecondsInMili + "\n");
     }
 
   /**
@@ -241,7 +238,7 @@ public class TestClient {
 
     // System.out.println(Category);
     // System.out.println(Filename);
-
+    long startTime = System.nanoTime();
     try{
       String fileContents =  (String) client.execute("FrontEnd.getItem", params.toArray());
       //We are going to assume that a request for a nonexistent file will never come in
@@ -262,17 +259,18 @@ public class TestClient {
       if(recievedFile.exists()){
         recievedFile.delete();
       }
+      
+      long totalTime = System.nanoTime() - startTime;
+      System.out.println(totalTime/nanoSecondsInMili + "\n");
 
       //Create the File
       recievedFile.createNewFile();
 
       //Write the contents to the file
       FileWriter fileWriter = new FileWriter(Filename);
-      System.out.println((int)fileContents.charAt(1));
+    //   System.out.println((int)fileContents.charAt(1));
       fileWriter.write(fileContents.substring(1));
       fileWriter.close();
-
-      System.out.println("Successfully retrieved: " + Filename);
     }
     catch(Exception e){
       //If there is no backup frontEnd, fail
@@ -344,7 +342,7 @@ public class TestClient {
     String category = categories[index];
     switch(args[1]){
         case "lookup":
-          lookupFile(args[1], args[2]);
+          lookupFile(category, "gatsby.txt");
           break;
 
         case "add":
