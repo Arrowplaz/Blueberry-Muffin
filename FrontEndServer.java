@@ -416,10 +416,14 @@ public class FrontEndServer {
 
   public Boolean addItem(String category, String fileName, String contents, String leader){
     // this couldn't be synchronize fucked right
-    addInProgress = true; 
+    synchronized (addInProgress) {
+      addInProgress = true; 
+    }
 
     if (databases.size() == 0){
-      addInProgress = false;
+      synchronized (addInProgress) {
+        addInProgress = false;
+      }
       return false; 
     }
     
@@ -437,7 +441,9 @@ public class FrontEndServer {
     }
     // fails for some reason 
     else if (addResult.equals("false")){
-      addInProgress = false;
+      synchronized (addInProgress) {
+        addInProgress = false;
+      };
       return false;
     }
 
@@ -445,7 +451,10 @@ public class FrontEndServer {
     // to avoid a recursive add where they all add to each other
     if (leader.equals("NO")) {
       System.out.println("Not coordinator, not adding to other FrontEnds...");
-      addInProgress = false;
+      synchronized (addInProgress) {
+        addInProgress = false;
+      };
+      
       return true;
     }
 
@@ -478,7 +487,9 @@ public class FrontEndServer {
       otherFrontEnds = new ArrayList<String>(liveFrontEnds);
     }
     System.out.println("number of alive frontEnds " + otherFrontEnds.size());
-    addInProgress = false;
+    synchronized (addInProgress) {
+      addInProgress = false;
+    }
     return true;
   }
 
